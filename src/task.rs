@@ -1,12 +1,14 @@
 use std::fmt::Display;
 
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Task {
     description: String,
     dot: bool,
-    complete: bool
+    complete: bool,
+    uuid: Uuid
 }
 
 impl Task {
@@ -15,7 +17,8 @@ impl Task {
         Self {
             description: description.to_string(),
             dot: false,
-            complete: false
+            complete: false,
+            uuid: Uuid::new_v4()
         }
     }
 
@@ -27,6 +30,11 @@ impl Task {
     #[must_use]
     pub fn dot(&self) -> bool {
         self.dot
+    }
+
+    #[must_use]
+    pub fn uuid(&self) -> Uuid {
+        self.uuid
     }
 
     pub fn toggle_dot(&mut self) {

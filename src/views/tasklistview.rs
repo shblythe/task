@@ -1,36 +1,57 @@
 use ratatui::{layout::Rect, widgets::{List, ListState}, Frame};
+use uuid::Uuid;
 
 use crate::TaskList;
 
 #[derive(Default)]
 pub struct TaskListView {
-    state: ListState
+    state: ListState,
+    selected_uuid: Option<Uuid>
 }
 
 impl TaskListView {
     /// Renders view to a frame area
     pub fn render(&mut self, frame: &mut Frame, area: Rect, task_list: &TaskList) {
-        if self.state.selected().is_none() && !task_list.tasks().is_empty() {
-            self.state.select(Some(0));
+        let mut filtered_tasks = task_list.filtered_tasks().peekable();
+        if self.state.selected().is_none() && filtered_tasks.peek().is_some() {
+            self.select(task_list, 0);
         }
         let list = List::new(
-            task_list.tasks().iter().map(ToString::to_string)
+            filtered_tasks.map(ToString::to_string)
         ).highlight_symbol(">> ");
         frame.render_stateful_widget(list, area, &mut self.state);
     }
 
-    pub fn move_up(&mut self) {
+    fn select(&mut self, task_list: &TaskList, index: usize) {
+        if let Some(task) = task_list.filtered_tasks().nth(index) {
+            self.selected_uuid = Some(task.uuid());
+        } else {
+            self.selected_uuid = None;
+        }
+        self.state.select(Some(index));
+    }
+
+    /// Fix the selection after a change in a task, or filtering, by attempting
+    /// to re-select the current index, and defaulting to the bottom task
+    /// otherwise.
+    fn fix_selection(&mut self, task_list: &TaskList) {
+        let last_index = task_list.filtered_tasks().count() - 1;
+        let index = usize::min(self.state.selected().unwrap_or(last_index), last_index);
+        self.select(task_list, index);
+    }
+
+    pub fn move_up(&mut self, task_list: &TaskList) {
         if let Some(current) = self.state.selected() {
             if current > 0 {
-                self.state.select(Some(current - 1));
+                self.select(task_list, current - 1);
             }
         }
     }
 
     pub fn move_down(&mut self, task_list: &TaskList) {
         if let Some(current) = self.state.selected() {
-            if current < task_list.tasks().len()-1 {
-                self.state.select(Some(current + 1));
+            if current < task_list.filtered_tasks().count()-1 {
+                self.select(task_list, current + 1);
             }
         }
     }
@@ -42,12 +63,13 @@ impl TaskListView {
     /// # Errors
     ///
     /// Will return `Err` if the write to storage fails.
-    pub fn toggle_dot(&self, task_list: &mut TaskList) -> std::io::Result<()> {
-        if let Some(current) = self.state.selected() {
-            if let Some(task) = task_list.get(current) {
+    pub fn toggle_dot(&mut self, task_list: &mut TaskList) -> std::io::Result<()> {
+        if let Some(selected_uuid) = self.selected_uuid {
+            if let Some(task) = task_list.get(selected_uuid) {
                 let mut task = task.clone();
                 task.toggle_dot();
-                task_list.replace(current, task)?;
+                task_list.replace(selected_uuid, task)?;
+                self.fix_selection(task_list);
             }
         }
         Ok(())
@@ -60,12 +82,13 @@ impl TaskListView {
     /// # Errors
     ///
     /// Will return `Err` if the write to storage fails.
-    pub fn complete(&self, task_list: &mut TaskList) -> std::io::Result<()> {
-        if let Some(current) = self.state.selected() {
-            if let Some(task) = task_list.get(current) {
+    pub fn complete(&mut self, task_list: &mut TaskList) -> std::io::Result<()> {
+        if let Some(selected_uuid) = self.selected_uuid {
+            if let Some(task) = task_list.get(selected_uuid) {
                 let mut task = task.clone();
                 task.complete();
-                task_list.replace(current, task)?;
+                task_list.replace(selected_uuid, task)?;
+                self.fix_selection(task_list);
             }
         }
         Ok(())

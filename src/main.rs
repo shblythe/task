@@ -61,7 +61,7 @@ fn check_events(task_list_view: &mut TaskListView, task_add_view: &mut TaskAddVi
                 match key.code {
                     KeyCode::Char('q') => return Ok(true),
                     KeyCode::Char('j') => task_list_view.move_down(task_list),
-                    KeyCode::Char('k') => task_list_view.move_up(),
+                    KeyCode::Char('k') => task_list_view.move_up(task_list),
                     KeyCode::Char('.') => task_list_view.toggle_dot(task_list)?,
                     KeyCode::Char('d') => task_list_view.complete(task_list)?,
                     _ => ()
