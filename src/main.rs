@@ -5,7 +5,7 @@ use crossterm::{
     event::{self, KeyCode, KeyEventKind}, terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen}, ExecutableCommand
 };
 use ratatui::{backend::CrosstermBackend, layout::{Constraint, Direction, Layout}, widgets::{Block, Borders}, Terminal};
-use task::{TaskList, TaskListView, TaskAddView};
+use task::{TaskList, TaskListView, TaskEditView};
 
 fn setup_ratatui() -> Result<Terminal<CrosstermBackend<Stdout>>> {
     stdout().execute(EnterAlternateScreen)?;
@@ -23,7 +23,7 @@ fn shutdown_ratatui() -> Result<()> {
 
 fn render(terminal: &mut Terminal<CrosstermBackend<Stdout>>,
           task_list_view: &mut TaskListView,
-          task_add_view: &TaskAddView,
+          task_edit_view: &TaskEditView,
           task_list: &TaskList,
           load_failed: bool,
           write_fails: i32) -> Result<()> {
@@ -39,7 +39,7 @@ fn render(terminal: &mut Terminal<CrosstermBackend<Stdout>>,
             ).split(frame.size());
         frame.render_widget(Block::new().borders(Borders::TOP).title("Tasks"), main_layout[0]);
         task_list_view.render(frame, main_layout[1], task_list);
-        task_add_view.render(frame, main_layout[2]);
+        task_edit_view.render(frame, main_layout[2]);
         frame.render_widget(Block::new().borders(Borders::TOP).title(
                 if write_fails > 0 {
                     format!("** ERROR: Write failed {write_fails} times")
@@ -54,10 +54,10 @@ fn render(terminal: &mut Terminal<CrosstermBackend<Stdout>>,
     Ok(())
 }
 
-fn check_events(task_list_view: &mut TaskListView, task_add_view: &mut TaskAddView, task_list: &mut TaskList) -> Result<bool> {
+fn check_events(task_list_view: &mut TaskListView, task_edit_view: &mut TaskEditView, task_list: &mut TaskList) -> Result<bool> {
     if event::poll(std::time::Duration::from_millis(16))? {
         if let event::Event::Key(key) = event::read()? {
-            if key.kind == KeyEventKind::Press && !task_add_view.handle_key(key.code, task_list)? {
+            if key.kind == KeyEventKind::Press && !task_edit_view.handle_key(key.code, task_list, task_list_view.selected_uuid())? {
                 match key.code {
                     KeyCode::Char('q') => return Ok(true),
                     KeyCode::Char('j') => task_list_view.move_down(task_list),
@@ -75,13 +75,13 @@ fn check_events(task_list_view: &mut TaskListView, task_add_view: &mut TaskAddVi
 fn main() -> Result<()> {
     let (mut tasks, task_load_failed) = TaskList::load().map_or_else(|_| (TaskList::default(), true), |tl| (tl, false));
     let mut task_list_view = TaskListView::default();
-    let mut task_add_view = TaskAddView::default();
+    let mut task_edit_view = TaskEditView::default();
     let mut write_fails = 0;
 
     let mut terminal = setup_ratatui()?;
     loop {
-        render(&mut terminal, &mut task_list_view, &task_add_view, &tasks, task_load_failed, write_fails)?;
-        match check_events(&mut task_list_view, &mut task_add_view, &mut tasks) {
+        render(&mut terminal, &mut task_list_view, &task_edit_view, &tasks, task_load_failed, write_fails)?;
+        match check_events(&mut task_list_view, &mut task_edit_view, &mut tasks) {
             Ok(true) => break,
             Ok(false) => (),
             _ => write_fails += 1

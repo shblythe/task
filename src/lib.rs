@@ -1,4 +1,4 @@
-#![warn(clippy::pedantic, clippy::all, clippy::unwrap_used, clippy::expect_used)]
+#![warn(clippy::pedantic, clippy::all, clippy::unwrap_used)]
 
 mod task;
 pub use task::*;

@@ -1,5 +1,6 @@
 use crossterm::event::KeyCode;
 use ratatui::{layout::Rect, style::Style, text::{Line, Span, Text}, Frame};
+use uuid::Uuid;
 
 use crate::{Task, TaskList};
 
@@ -10,13 +11,14 @@ pub enum InputMode {
 }
 
 #[derive(Default)]
-pub struct TaskAddView {
+pub struct TaskEditView {
     input: String,
     index: usize,
-    mode: InputMode
+    mode: InputMode,
+    task_uuid: Option<Uuid> // is None if we're creating a new task
 }
 
-impl TaskAddView {
+impl TaskEditView {
 
     pub fn render(&self, frame: &mut Frame, area: Rect) {
         frame.render_widget(
@@ -81,7 +83,14 @@ impl TaskAddView {
     }
 
     fn save_task(&mut self, task_list: &mut TaskList) -> std::io::Result<()> {
-        let result = task_list.add(Task::new(&self.input));
+        let result = if let Some(task_uuid) = self.task_uuid {
+            let task = task_list.get(task_uuid).expect("Couldn't retrieve uuid'd task in TaskEditView::save_task\n{task_uuid}");
+            let mut task = task.clone();
+            task.update_description(&self.input);
+            task_list.replace(task_uuid, task)
+        } else {
+            task_list.add(Task::new(&self.input))
+        };
         self.input.clear();
         self.reset_cursor();
         self.mode = InputMode::Normal;
@@ -107,14 +116,28 @@ impl TaskAddView {
     /// # Errors
     ///
     /// Returns `Err` if we attempted to add a task, but the write to storage fails
-    pub fn handle_key(&mut self, code: KeyCode, task_list: &mut TaskList) -> std::io::Result<bool> {
+    pub fn handle_key(&mut self, code: KeyCode, task_list: &mut TaskList, selected_uuid: Option<Uuid>) -> std::io::Result<bool> {
         match self.mode {
             InputMode::Normal => {
                 match code {
                     KeyCode::Char('a') => {
                         self.mode = InputMode::Editing;
+                        self.task_uuid = None;
                         Ok(true)
                     },
+                    KeyCode::Char('m') => {
+                        if let Some(task_uuid) = selected_uuid {
+                            self.mode = InputMode::Editing;
+                            self.task_uuid = Some(task_uuid);
+                            if let Some(task) = task_list.get(task_uuid) {
+                                self.input = task.description().to_string();
+                                self.index = self.input.len();
+                            }
+                            Ok(true)
+                        } else {
+                            Ok(false)
+                        }
+                    }
                     _ => Ok(false)
                 }
             },

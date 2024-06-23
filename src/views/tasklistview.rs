@@ -22,6 +22,11 @@ impl TaskListView {
         frame.render_stateful_widget(list, area, &mut self.state);
     }
 
+    #[must_use]
+    pub fn selected_uuid(&self) -> Option<Uuid> {
+        self.selected_uuid
+    }
+
     fn select(&mut self, task_list: &TaskList, index: usize) {
         if let Some(task) = task_list.filtered_tasks().nth(index) {
             self.selected_uuid = Some(task.uuid());

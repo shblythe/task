@@ -37,6 +37,10 @@ impl Task {
         self.uuid
     }
 
+    pub fn update_description(&mut self, description: &str) {
+        self.description = description.to_string();
+    }
+
     pub fn toggle_dot(&mut self) {
         self.dot = !self.dot;
     }
