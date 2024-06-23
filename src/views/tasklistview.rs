@@ -1,7 +1,7 @@
 use ratatui::{layout::Rect, widgets::{List, ListState}, Frame};
 use uuid::Uuid;
 
-use crate::TaskList;
+use crate::{Task, TaskList};
 
 #[derive(Default)]
 pub struct TaskListView {
@@ -14,7 +14,11 @@ impl TaskListView {
     pub fn render(&mut self, frame: &mut Frame, area: Rect, task_list: &TaskList) {
         let mut filtered_tasks = task_list.filtered_tasks().peekable();
         if self.state.selected().is_none() && filtered_tasks.peek().is_some() {
-            self.select(task_list, 0);
+            if let Some(pos) = task_list.filtered_tasks().rev().position(Task::dot) {
+                self.select(task_list, task_list.filtered_tasks().count()-1 - pos);
+            } else {
+                self.select(task_list, 0);
+            }
         }
         let list = List::new(
             filtered_tasks.map(ToString::to_string)
