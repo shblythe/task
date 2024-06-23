@@ -1,7 +1,7 @@
 - [x] Add ability to complete tasks
 - [x] Add ability to add tasks
 - [x] Add delete_char implementation
-- [ ] Add a cursor, use inverse colours?
+- [x] Add a cursor, use inverse colours?
 - [ ] Add saving and loading of tasks
 - [ ] Add ability to filter completed tasks out of view
 - [ ] Improve look and feel

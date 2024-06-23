@@ -1,5 +1,5 @@
 use crossterm::event::KeyCode;
-use ratatui::{layout::Rect, text::Text, Frame};
+use ratatui::{layout::Rect, style::Style, text::{Line, Span, Text}, Frame};
 
 use crate::{Task, TaskList};
 
@@ -17,14 +17,33 @@ pub struct TaskAddView {
 }
 
 impl TaskAddView {
+
     pub fn render(&self, frame: &mut Frame, area: Rect) {
         frame.render_widget(
-            Text::raw(
-                match self.mode {
-                    InputMode::Normal => "NORMAL MODE",
-                    InputMode::Editing => &self.input
+            match self.mode {
+                InputMode::Normal => Text::from("NORMAL MODE"),
+                InputMode::Editing => {
+                    let left_of_cursor = Span::raw(self.input.chars().take(self.index).collect::<String>());
+                    let mut cursor_str = self.input.chars().skip(self.index).take(1).collect::<String>();
+                    if cursor_str.is_empty() {
+                        cursor_str.push(' ');
+                    }
+                    let cursor = Span::styled(
+                        cursor_str,
+                        Style::new()
+                            .fg(ratatui::style::Color::Black)
+                            .bg(ratatui::style::Color::White)
+                        );
+                    let right_of_cursor = Span::raw(self.input.chars().skip(self.index+1).collect::<String>());
+                    let line = Line::from(vec![
+                                          left_of_cursor,
+                                          cursor,
+                                          right_of_cursor,
+                    ]);
+                    Text::from(vec![line])
                 }
-            ), area);
+            },
+            area);
     }
 
 
