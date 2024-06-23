@@ -24,10 +24,7 @@ impl TaskAddView {
                 InputMode::Normal => Text::from("NORMAL MODE"),
                 InputMode::Editing => {
                     let left_of_cursor = Span::raw(self.input.chars().take(self.index).collect::<String>());
-                    let mut cursor_str = self.input.chars().skip(self.index).take(1).collect::<String>();
-                    if cursor_str.is_empty() {
-                        cursor_str.push(' ');
-                    }
+                    let cursor_str = self.input.chars().nth(self.index).unwrap_or(' ').to_string();
                     let cursor = Span::styled(
                         cursor_str,
                         Style::new()
@@ -83,11 +80,12 @@ impl TaskAddView {
         self.index = 0;
     }
 
-    fn save_task(&mut self, task_list: &mut TaskList) {
-        task_list.add(Task::new(&self.input));
+    fn save_task(&mut self, task_list: &mut TaskList) -> std::io::Result<()> {
+        let result = task_list.add(Task::new(&self.input));
         self.input.clear();
         self.reset_cursor();
         self.mode = InputMode::Normal;
+        result
     }
 
     fn delete_char(&mut self) {
@@ -105,20 +103,24 @@ impl TaskAddView {
 
     /// Attempts to handle keyboard input
     /// Returns true if it was handled, false if caller should handle
-    pub fn handle_key(&mut self, code: KeyCode, task_list: &mut TaskList) -> bool {
+    ///
+    /// # Errors
+    ///
+    /// Returns `Err` if we attempted to add a task, but the write to storage fails
+    pub fn handle_key(&mut self, code: KeyCode, task_list: &mut TaskList) -> std::io::Result<bool> {
         match self.mode {
             InputMode::Normal => {
                 match code {
                     KeyCode::Char('a') => {
                         self.mode = InputMode::Editing;
-                        true
+                        Ok(true)
                     },
-                    _ => false
+                    _ => Ok(false)
                 }
             },
             InputMode::Editing => {
                 match code {
-                    KeyCode::Enter => self.save_task(task_list),
+                    KeyCode::Enter => self.save_task(task_list)?,
                     KeyCode::Char(to_insert) => self.enter_char(to_insert),
                     KeyCode::Backspace => self.delete_char(),
                     KeyCode::Left => self.cursor_left(),
@@ -126,7 +128,7 @@ impl TaskAddView {
                     KeyCode::Esc => self.mode = InputMode::Normal,
                     _ => ()
                 };
-                true
+                Ok(true)
             }
         }
     }

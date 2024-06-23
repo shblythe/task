@@ -14,7 +14,7 @@ impl TaskListView {
             self.state.select(Some(0));
         }
         let list = List::new(
-            task_list.tasks().iter().map(|t| format!("{t}"))
+            task_list.tasks().iter().map(ToString::to_string)
         ).highlight_symbol(">> ");
         frame.render_stateful_widget(list, area, &mut self.state);
     }
@@ -35,20 +35,40 @@ impl TaskListView {
         }
     }
 
-    pub fn toggle_dot(&self, task_list: &mut TaskList) {
+    /// Toggles the 'dot' on the currently selected task, and attempt to
+    /// write the updated task list to storage.
+    /// Silently ignores failures caused by the lack of a valid current task.
+    ///
+    /// # Errors
+    ///
+    /// Will return `Err` if the write to storage fails.
+    pub fn toggle_dot(&self, task_list: &mut TaskList) -> std::io::Result<()> {
         if let Some(current) = self.state.selected() {
-            if let Some(task) = task_list.get_mut(current) {
+            if let Some(task) = task_list.get(current) {
+                let mut task = task.clone();
                 task.toggle_dot();
+                task_list.replace(current, task)?;
             }
         }
+        Ok(())
     }
 
-    pub fn complete(&self, task_list: &mut TaskList) {
+    /// Sets the currently selected task to completed, and attempts to
+    /// write the updated task list to storage.
+    /// Silently ignores failures caused by the lack of a valid current task.
+    ///
+    /// # Errors
+    ///
+    /// Will return `Err` if the write to storage fails.
+    pub fn complete(&self, task_list: &mut TaskList) -> std::io::Result<()> {
         if let Some(current) = self.state.selected() {
-            if let Some(task) = task_list.get_mut(current) {
+            if let Some(task) = task_list.get(current) {
+                let mut task = task.clone();
                 task.complete();
+                task_list.replace(current, task)?;
             }
         }
+        Ok(())
     }
 }
 

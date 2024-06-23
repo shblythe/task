@@ -1,5 +1,8 @@
 use std::fmt::Display;
 
+use serde::{Deserialize, Serialize};
+
+#[derive(Clone, Serialize, Deserialize)]
 pub struct Task {
     description: String,
     dot: bool,

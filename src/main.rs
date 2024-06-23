@@ -5,7 +5,7 @@ use crossterm::{
     event::{self, KeyCode, KeyEventKind}, terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen}, ExecutableCommand
 };
 use ratatui::{backend::CrosstermBackend, layout::{Constraint, Direction, Layout}, widgets::{Block, Borders}, Terminal};
-use task::{Task, TaskList, TaskListView, TaskAddView};
+use task::{TaskList, TaskListView, TaskAddView};
 
 fn setup_ratatui() -> Result<Terminal<CrosstermBackend<Stdout>>> {
     stdout().execute(EnterAlternateScreen)?;
@@ -24,7 +24,9 @@ fn shutdown_ratatui() -> Result<()> {
 fn render(terminal: &mut Terminal<CrosstermBackend<Stdout>>,
           task_list_view: &mut TaskListView,
           task_add_view: &TaskAddView,
-          task_list: &TaskList) -> Result<()> {
+          task_list: &TaskList,
+          load_failed: bool,
+          write_fails: i32) -> Result<()> {
     terminal.draw(|frame| {
         let main_layout = Layout::new(
             Direction::Vertical,
@@ -38,7 +40,16 @@ fn render(terminal: &mut Terminal<CrosstermBackend<Stdout>>,
         frame.render_widget(Block::new().borders(Borders::TOP).title("Tasks"), main_layout[0]);
         task_list_view.render(frame, main_layout[1], task_list);
         task_add_view.render(frame, main_layout[2]);
-        frame.render_widget(Block::new().borders(Borders::TOP).title("j/k = down/up, . = dot, q = quit"), main_layout[3]);
+        frame.render_widget(Block::new().borders(Borders::TOP).title(
+                if write_fails > 0 {
+                    format!("** ERROR: Write failed {write_fails} times")
+                }
+                else if load_failed {
+                    "** ERROR: Load failed - started with empty task list".to_string()
+                } else {
+                    "j/k = down/up, . = dot, q = quit".to_string()
+                }
+                ), main_layout[3]);
     })?;
     Ok(())
 }
@@ -46,35 +57,34 @@ fn render(terminal: &mut Terminal<CrosstermBackend<Stdout>>,
 fn check_events(task_list_view: &mut TaskListView, task_add_view: &mut TaskAddView, task_list: &mut TaskList) -> Result<bool> {
     if event::poll(std::time::Duration::from_millis(16))? {
         if let event::Event::Key(key) = event::read()? {
-            if key.kind == KeyEventKind::Press && !task_add_view.handle_key(key.code, task_list) {
+            if key.kind == KeyEventKind::Press && !task_add_view.handle_key(key.code, task_list)? {
                 match key.code {
-                    KeyCode::Char('q') => return Ok(false),
+                    KeyCode::Char('q') => return Ok(true),
                     KeyCode::Char('j') => task_list_view.move_down(task_list),
                     KeyCode::Char('k') => task_list_view.move_up(),
-                    KeyCode::Char('.') => task_list_view.toggle_dot(task_list),
-                    KeyCode::Char('d') => task_list_view.complete(task_list),
+                    KeyCode::Char('.') => task_list_view.toggle_dot(task_list)?,
+                    KeyCode::Char('d') => task_list_view.complete(task_list)?,
                     _ => ()
                 }
             }
         }
     }
-    Ok(true)
+    Ok(false)
 }
 
 fn main() -> Result<()> {
-    let mut tasks = TaskList::default();
+    let (mut tasks, task_load_failed) = TaskList::load().map_or_else(|_| (TaskList::default(), true), |tl| (tl, false));
     let mut task_list_view = TaskListView::default();
     let mut task_add_view = TaskAddView::default();
-    tasks.add(Task::new("Do something"));
-    tasks.add(Task::new("Do something else"));
-    tasks.add(Task::new("What about this?"));
-    tasks.get_mut(0).expect("Task impossibly didn't exist").toggle_dot();
+    let mut write_fails = 0;
 
     let mut terminal = setup_ratatui()?;
     loop {
-        render(&mut terminal, &mut task_list_view, &task_add_view, &tasks)?;
-        if !check_events(&mut task_list_view, &mut task_add_view, &mut tasks)? {
-            break;
+        render(&mut terminal, &mut task_list_view, &task_add_view, &tasks, task_load_failed, write_fails)?;
+        match check_events(&mut task_list_view, &mut task_add_view, &mut tasks) {
+            Ok(true) => break,
+            Ok(false) => (),
+            _ => write_fails += 1
         }
     }
     shutdown_ratatui()?;
