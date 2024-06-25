@@ -15,7 +15,8 @@ pub struct Task {
     // recurring task.
     recur_next: Option<NaiveDateTime>,
     // Contains a recur interval in days, if it's a recurring task
-    recur_interval_days: Option<u64>
+    recur_interval_days: Option<u64>,
+    snooze_until: Option<NaiveDateTime>,
 }
 
 impl Task {
@@ -27,7 +28,8 @@ impl Task {
             uuid: Uuid::new_v4(),
             completed: None,
             recur_next: None,
-            recur_interval_days: None
+            recur_interval_days: None,
+            snooze_until: None
         }
     }
 
@@ -40,21 +42,29 @@ impl Task {
         self.recur_interval_days = Some(1);
     }
 
+    fn in_n_days_5am(interval: u64) -> NaiveDateTime {
+        let mut next_5am = NaiveDateTime::new(Local::now().date_naive(),
+        NaiveTime::from_hms_opt(5,0,0).expect("5am not a valid time!"));
+        if next_5am < Local::now().naive_local() {
+            next_5am = next_5am.checked_add_days(Days::new(1)).expect("Couldn't add 1 day in set_recur_daily");
+        }
+        next_5am.checked_add_days(Days::new(interval - 1)).expect("Couldn't add days in set_recur_daily")
+    }
+
     /// Update ``recur_next`` field for recurring tasks
     fn recur_next(&mut self) {
         if let Some(interval) = self.recur_interval_days {
-            let mut next_5am = NaiveDateTime::new(Local::now().date_naive(), NaiveTime::from_hms_opt(5,0,0).expect("5am not a valid time!"));
-            if next_5am < Local::now().naive_local() {
-                next_5am = next_5am.checked_add_days(Days::new(1)).expect("Couldn't add 1 day in set_recur_daily");
-            }
-            next_5am = next_5am.checked_add_days(Days::new(interval - 1)).expect("Couldn't add days in set_recur_daily");
-            self.recur_next = Some(next_5am);
+            self.recur_next = Some(Task::in_n_days_5am(interval));
         }
     }
 
     pub fn clear_recur(&mut self) {
         self.recur_next = None;
         self.recur_interval_days = None;
+    }
+
+    pub fn snooze_tomorrow(&mut self) {
+        self.snooze_until = Some(Task::in_n_days_5am(1));
     }
 
     /// Returns true if the task is not current - i.e. is not complete
@@ -65,6 +75,8 @@ impl Task {
     pub fn not_current(&self) -> bool {
         if let Some(next) = self.recur_next {
             Local::now().naive_local() < next
+        } else if let Some(snooze_until) = self.snooze_until {
+            Local::now().naive_local() < snooze_until
         } else {
             false
         }

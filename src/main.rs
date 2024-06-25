@@ -65,6 +65,7 @@ fn check_events(task_list_view: &mut TaskListView, task_edit_view: &mut TaskEdit
                     KeyCode::Char('.') => task_list_view.toggle_dot(task_list)?,
                     KeyCode::Char('d') => task_list_view.complete(task_list)?,
                     KeyCode::Char('r') => task_list_view.recur_daily(task_list)?,
+                    KeyCode::Char('z') => task_list_view.snooze_tomorrow(task_list)?,
                     _ => ()
                 }
             }
