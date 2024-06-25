@@ -76,6 +76,23 @@ impl TaskList {
         }
     }
 
+    /// Attempts to replace a task in the list, but repositioned to the bottom
+    /// and write to storage.
+    /// Fails silently if the task to replace isn't found!
+    /// 
+    /// # Errors
+    ///
+    /// Will return `Err` if the write to storage fails
+    pub fn replace_at_bottom(&mut self, uuid: Uuid, task: Task) -> std::io::Result<()> {
+        if let Some(index) = self.tasks.iter().position(|t| t.uuid() == uuid) {
+            self.tasks.remove(index);
+            self.tasks.push(task);
+            self.save()
+        } else {
+            Ok(())
+        }
+    }
+
     fn save(&self) -> std::io::Result<()> {
         let serialized = serde_json::to_string(&self.tasks)?;
         let _ = rename(PATH, BACKUP_PATH);
