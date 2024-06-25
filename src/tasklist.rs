@@ -43,7 +43,7 @@ impl TaskList {
     #[must_use]
     pub fn filtered_tasks(&self) -> Box<dyn DoubleEndedIterator<Item = &Task> + '_> {
         if !self.show_completed {
-            return Box::new(self.tasks.iter().filter(|t| !t.is_complete()));
+            return Box::new(self.tasks.iter().filter(|t| !t.is_complete() && !t.not_current()));
         }
         Box::new(self.tasks.iter())
     }

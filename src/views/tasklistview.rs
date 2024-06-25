@@ -102,5 +102,25 @@ impl TaskListView {
         }
         Ok(())
     }
+
+
+    /// Set the currently selected task to recur daily, and attempts to
+    /// write the updated task list to storage.
+    /// Silently ignores failures caused by the lack of a valid current task.
+    ///
+    /// # Errors
+    ///
+    /// Will return `Err` if the write to storage fails.
+    pub fn recur_daily(&mut self, task_list: &mut TaskList) -> std::io::Result<()> {
+        if let Some(selected_uuid) = self.selected_uuid {
+            if let Some(task) = task_list.get(selected_uuid) {
+                let mut task = task.clone();
+                task.set_recur_daily();
+                task_list.replace(selected_uuid, task)?;
+                self.fix_selection(task_list);
+            }
+        }
+        Ok(())
+    }
 }
 
