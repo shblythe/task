@@ -113,6 +113,8 @@ impl TaskListView {
     /// write the updated task list to storage.
     /// Silently ignores failures caused by the lack of a valid current task.
     ///
+    /// If the currently selected task is already set to recur, removes recurrence
+    ///
     /// # Errors
     ///
     /// Will return `Err` if the write to storage fails.
@@ -120,7 +122,11 @@ impl TaskListView {
         if let Some(selected_uuid) = self.selected_uuid {
             if let Some(task) = task_list.get(selected_uuid) {
                 let mut task = task.clone();
-                task.set_recur_daily();
+                if task.is_recurring() {
+                    task.clear_recur();
+                } else {
+                    task.set_recur_daily();
+                }
                 task_list.replace(selected_uuid, task)?;
                 self.fix_selection(task_list);
             }

@@ -58,6 +58,11 @@ impl Task {
         }
     }
 
+    #[must_use]
+    pub fn is_recurring(&self) -> bool {
+        self.recur_interval_days.is_some()
+    }
+
     pub fn clear_recur(&mut self) {
         self.recur_next = None;
         self.recur_interval_days = None;
