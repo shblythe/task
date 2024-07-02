@@ -97,17 +97,25 @@ impl TaskEditView {
         result
     }
 
-    fn delete_char(&mut self) {
+    fn delete_char_at(&mut self, index: usize) {
         // Delete the character by taking the sections to the left and right of it
         // and concatenating them, to avoid multi-byte char turmoil.
-        if self.index > 0 {
-            let current_index = self.index;
-            let from_left_to_current = current_index - 1;
-            let left_section = self.input.chars().take(from_left_to_current);
-            let right_section = self.input.chars().skip(current_index);
+        if index < self.input.len() {
+            let left_section = self.input.chars().take(index);
+            let right_section = self.input.chars().skip(index + 1);
             self.input = left_section.chain(right_section).collect();
+        }
+    }
+
+    fn backspace_delete(&mut self) {
+        if self.index > 0 {
+            self.delete_char_at(self.index-1);
             self.cursor_left();
         }
+    }
+
+    fn delete_at_cursor(&mut self) {
+        self.delete_char_at(self.index);
     }
 
     /// Attempts to handle keyboard input
@@ -145,10 +153,13 @@ impl TaskEditView {
                 match code {
                     KeyCode::Enter => self.save_task(task_list)?,
                     KeyCode::Char(to_insert) => self.enter_char(to_insert),
-                    KeyCode::Backspace => self.delete_char(),
+                    KeyCode::Backspace => self.backspace_delete(),
                     KeyCode::Left => self.cursor_left(),
                     KeyCode::Right => self.cursor_right(),
                     KeyCode::Esc => self.mode = InputMode::Normal,
+                    KeyCode::Home => self.index = 0,
+                    KeyCode::End => self.index = self.input.len(),
+                    KeyCode::Delete => self.delete_at_cursor(),
                     _ => ()
                 };
                 Ok(true)
