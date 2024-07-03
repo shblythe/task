@@ -1,11 +1,13 @@
-use std::{fs::{read_to_string, rename, File}, io::Write};
+use std::{fs::{create_dir_all, read_to_string, rename, File}, io::Write, path::{Path, PathBuf}};
 
+use dirs::config_local_dir;
 use uuid::Uuid;
 
 use crate::Task;
 
 const PATH : &str = "tasks.json";
 const BACKUP_PATH : &str = "tasks_backup.json";
+const CONFIG_DIR : &str = "task";
 
 #[derive(Default)]
 pub struct TaskList {
@@ -14,6 +16,23 @@ pub struct TaskList {
 }
 
 impl TaskList {
+    fn config_dir_pathbuf() -> PathBuf {
+        let dir_path_buf = config_local_dir().unwrap_or_default();
+        dir_path_buf.join(Path::new(CONFIG_DIR))
+    }
+
+    fn path_to_save_file(file: &str) -> String {
+        Self::config_dir_pathbuf().join(Path::new(file)).to_string_lossy().to_string()
+    }
+
+    fn save_path() -> String {
+        Self::path_to_save_file(PATH)
+    }
+
+    fn backup_path() -> String {
+        Self::path_to_save_file(BACKUP_PATH)
+    }
+
     /// Attempts to load the ``TaskList`` object from storage, and will
     /// return it if found, and if valid.
     ///
@@ -22,7 +41,7 @@ impl TaskList {
     /// Will return `Err` if the file doesn't exist, or doesn't contain
     /// valid data.
     pub fn load() -> std::io::Result<Self> {
-        let serialized = read_to_string(PATH)?;
+        let serialized = read_to_string(Self::save_path())?;
         let tasks = serde_json::from_str(&serialized)?;
         Ok(TaskList {
             tasks,
@@ -95,8 +114,13 @@ impl TaskList {
 
     fn save(&self) -> std::io::Result<()> {
         let serialized = serde_json::to_string(&self.tasks)?;
-        let _ = rename(PATH, BACKUP_PATH);
-        let mut file = File::create(PATH)?;
+        let config_dir_path = &Self::config_dir_pathbuf();
+        if !config_dir_path.exists() {
+            create_dir_all(config_dir_path).expect("Couldn't create config dir");
+        }
+        assert!(config_dir_path.is_dir(), "Config dir path exists but is not a directory");
+        let _ = rename(Self::save_path(), Self::backup_path());
+        let mut file = File::create(Self::save_path())?;
         file.write_all(serialized.as_bytes())?;
         Ok(())
     }
