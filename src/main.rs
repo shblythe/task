@@ -5,7 +5,7 @@ use crossterm::{
     event::{self, KeyCode, KeyEventKind}, terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen}, ExecutableCommand
 };
 use ratatui::{backend::CrosstermBackend, layout::{Constraint, Direction, Layout}, widgets::{Block, Borders}, Terminal};
-use task::{TaskList, TaskListView, TaskEditView};
+use task::{TaskEditView, TaskList, TaskListView};
 
 fn setup_ratatui() -> Result<Terminal<CrosstermBackend<Stdout>>> {
     stdout().execute(EnterAlternateScreen)?;
@@ -28,6 +28,7 @@ fn render(terminal: &mut Terminal<CrosstermBackend<Stdout>>,
           load_failed: bool,
           write_fails: i32) -> Result<()> {
     terminal.draw(|frame| {
+        let area = frame.size();
         let main_layout = Layout::new(
             Direction::Vertical,
             [
@@ -36,7 +37,7 @@ fn render(terminal: &mut Terminal<CrosstermBackend<Stdout>>,
                 Constraint::Length(1),
                 Constraint::Length(1),
             ]
-            ).split(frame.size());
+            ).split(area);
         frame.render_widget(Block::new().borders(Borders::TOP).title("Tasks"), main_layout[0]);
         task_list_view.render(frame, main_layout[1], task_list);
         task_edit_view.render(frame, main_layout[2]);
@@ -60,6 +61,8 @@ fn check_events(task_list_view: &mut TaskListView, task_edit_view: &mut TaskEdit
             if key.kind == KeyEventKind::Press && !task_edit_view.handle_key(key.code, task_list, task_list_view.selected_uuid())? {
                 match key.code {
                     KeyCode::Char('q') => return Ok(true),
+                    KeyCode::Char('g') => task_list_view.move_start(task_list),
+                    KeyCode::Char('G') => task_list_view.move_end(task_list),
                     KeyCode::Char('j') => task_list_view.move_down(task_list),
                     KeyCode::Char('k') => task_list_view.move_up(task_list),
                     KeyCode::Char('.') => task_list_view.toggle_dot(task_list)?,

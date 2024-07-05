@@ -65,6 +65,14 @@ impl TaskListView {
         }
     }
 
+    pub fn move_start(&mut self, task_list: &TaskList) {
+        self.select(task_list, 0);
+    }
+
+    pub fn move_end(&mut self, task_list: &TaskList) {
+        self.select(task_list, task_list.filtered_tasks().count()-1);
+    }
+
     /// Toggles the 'dot' on the currently selected task, and attempt to
     /// write the updated task list to storage.
     /// Silently ignores failures caused by the lack of a valid current task.
