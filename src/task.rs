@@ -110,6 +110,10 @@ impl Task {
         self.dot = !self.dot;
     }
 
+    pub fn remove_dot(&mut self) {
+        self.dot = false;
+    }
+
     pub fn complete(&mut self) {
         self.dot = false;
         if self.recur_interval_days.is_some() {

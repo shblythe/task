@@ -43,10 +43,12 @@ impl TaskList {
     pub fn load() -> std::io::Result<Self> {
         let serialized = read_to_string(Self::save_path())?;
         let tasks = serde_json::from_str(&serialized)?;
-        Ok(TaskList {
+        let mut task_list = TaskList {
             tasks,
             show_completed: false,
-        })
+        };
+        task_list.reset_recurring();
+        Ok(task_list)
     }
 
     /// Attempts to add a task to the list, and write to storage.
@@ -103,12 +105,40 @@ impl TaskList {
     ///
     /// Will return `Err` if the write to storage fails
     pub fn replace_at_bottom(&mut self, uuid: Uuid, task: Task) -> std::io::Result<()> {
+        self.replace_at_bottom_saveopt(uuid, task, true)
+    }
+
+    fn replace_at_bottom_saveopt(&mut self, uuid: Uuid, task: Task, save: bool) -> std::io::Result<()> {
         if let Some(index) = self.tasks.iter().position(|t| t.uuid() == uuid) {
             self.tasks.remove(index);
             self.tasks.push(task);
-            self.save()
+            if save {
+                self.save()
+            } else {
+                Ok(())
+            }
         } else {
             Ok(())
+        }
+    }
+
+    fn replace_at_bottom_nosave(&mut self, uuid: Uuid, task: Task) {
+        let _ = self.replace_at_bottom_saveopt(uuid, task, false);
+    }
+
+    /// Move all recurring tasks to bottom, remove dots if present
+    fn reset_recurring(&mut self) {
+        let mut recurring_uuids : Vec<Uuid> = vec![];
+        for task in &self.tasks {
+            if task.is_recurring() {
+                recurring_uuids.push(task.uuid());
+            }
+        }
+        for uuid in recurring_uuids {
+            let mut task = self.get(uuid
+                ).expect("Should be able to find a task we know exists!").clone();
+            task.remove_dot();
+            self.replace_at_bottom_nosave(uuid, task);
         }
     }
 
