@@ -39,7 +39,7 @@ impl TaskList {
     /// # Errors
     ///
     /// Will return `Err` if the file doesn't exist, or doesn't contain
-    /// valid data.
+    /// valid data, or if we can't write back after post-load alterations.
     pub fn load() -> std::io::Result<Self> {
         let serialized = read_to_string(Self::save_path())?;
         let tasks = serde_json::from_str(&serialized)?;
@@ -47,7 +47,7 @@ impl TaskList {
             tasks,
             show_completed: false,
         };
-        task_list.reset_recurring();
+        task_list.reset_recurring()?;
         Ok(task_list)
     }
 
@@ -127,18 +127,23 @@ impl TaskList {
     }
 
     /// Move all recurring tasks to bottom, remove dots if present
-    fn reset_recurring(&mut self) {
+    fn reset_recurring(&mut self) -> std::io::Result<()> {
         let mut recurring_uuids : Vec<Uuid> = vec![];
         for task in &self.tasks {
             if task.is_recurring() {
                 recurring_uuids.push(task.uuid());
             }
         }
-        for uuid in recurring_uuids {
-            let mut task = self.get(uuid
-                ).expect("Should be able to find a task we know exists!").clone();
-            task.remove_dot();
-            self.replace_at_bottom_nosave(uuid, task);
+        if recurring_uuids.is_empty() {
+            Ok(())
+        } else {
+            for uuid in recurring_uuids {
+                let mut task = self.get(uuid
+                    ).expect("Should be able to find a task we know exists!").clone();
+                task.remove_dot();
+                self.replace_at_bottom_nosave(uuid, task);
+            }
+            self.save()
         }
     }
 
