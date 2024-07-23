@@ -161,5 +161,24 @@ impl TaskListView {
         Ok(())
     }
 
+    /// Snoozes the currently selected task for 1s, and attempts to
+    /// write the updated task list to storage.
+    /// Silently ignores failures caused by the lack of a valid current task.
+    ///
+    /// # Errors
+    ///
+    /// Will return `Err` if the write to storage fails.
+    pub fn snooze_1s(&mut self, task_list: &mut TaskList) -> std::io::Result<()> {
+        if let Some(selected_uuid) = self.selected_uuid {
+            if let Some(task) = task_list.get(selected_uuid) {
+                let mut task = task.clone();
+                task.snooze_1s();
+                task_list.replace(selected_uuid, task)?;
+                self.fix_selection(task_list);
+            }
+        }
+        Ok(())
+    }
+
 }
 

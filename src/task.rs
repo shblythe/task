@@ -1,6 +1,6 @@
 use std::{fmt::Display};
 
-use chrono::{Days, Local, NaiveDateTime, NaiveTime};
+use chrono::{Days, Local, NaiveDateTime, NaiveTime, TimeDelta};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -70,6 +70,17 @@ impl Task {
 
     pub fn snooze_tomorrow(&mut self) {
         self.snooze_until = Some(Task::in_n_days_5am(1));
+    }
+
+    /// Snooze a task for 1 second, for testing purposes
+    ///
+    /// # Panics
+    ///
+    /// Will panic if some apparently impossible things happen!
+    pub fn snooze_1s(&mut self) {
+        let mut snooze_to = NaiveDateTime::new(Local::now().date_naive(), Local::now().time());
+        snooze_to = snooze_to.checked_add_signed(TimeDelta::seconds(1)).expect("Can't add 1 sec in snooze_1s");
+        self.snooze_until = Some(snooze_to);
     }
 
     /// Returns true if the task is not current - i.e. is not complete
