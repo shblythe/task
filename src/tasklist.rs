@@ -47,7 +47,7 @@ impl TaskList {
             tasks,
             show_completed: false,
         };
-        task_list.reset_recurring()?;
+        task_list.reset_recurring_and_snoozed()?;
         Ok(task_list)
     }
 
@@ -127,20 +127,27 @@ impl TaskList {
     }
 
     /// Move all recurring tasks to bottom, remove dots if present
-    fn reset_recurring(&mut self) -> std::io::Result<()> {
-        let mut recurring_uuids : Vec<Uuid> = vec![];
+    ///
+    /// NOTE!
+    /// The logic below assumes that tasks cannot be both snoozed and recurring, if this becomes
+    /// possible, then we'd need to fix.
+    /// Basically, if a task is both recurring and snoozed, it will currently be unsnoozed by this
+    /// method, which isn't what we'd want.
+    fn reset_recurring_and_snoozed(&mut self) -> std::io::Result<()> {
+        let mut reset_uuids : Vec<Uuid> = vec![];
         for task in &self.tasks {
-            if task.is_recurring() {
-                recurring_uuids.push(task.uuid());
+            if task.snooze_expiring() || task.is_recurring() {
+                reset_uuids.push(task.uuid());
             }
         }
-        if recurring_uuids.is_empty() {
+        if reset_uuids.is_empty() {
             Ok(())
         } else {
-            for uuid in recurring_uuids {
+            for uuid in reset_uuids {
                 let mut task = self.get(uuid
                     ).expect("Should be able to find a task we know exists!").clone();
                 task.remove_dot();
+                task.unsnooze();
                 self.replace_at_bottom_nosave(uuid, task);
             }
             self.save()

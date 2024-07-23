@@ -83,6 +83,21 @@ impl Task {
         self.snooze_until = Some(snooze_to);
     }
 
+    /// Returns true if a task is currently marked as snoozed, but the snooze time
+    /// is before the current time, and has therefore expired
+    #[must_use]
+    pub fn snooze_expiring(&self) -> bool {
+        if let Some(snooze_until) = self.snooze_until {
+            Local::now().naive_local() >= snooze_until
+        } else {
+            false
+        }
+    }
+
+    pub fn unsnooze(&mut self) {
+        self.snooze_until = None
+    }
+
     /// Returns true if the task is not current - i.e. is not complete
     /// but is not currently eligible to be displayed - because it has
     /// snoozed, or it is a recurring task that we've completed and it
