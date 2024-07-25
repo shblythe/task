@@ -1,17 +1,25 @@
-use ratatui::{layout::Rect, widgets::{List, ListState}, Frame};
+use ratatui::{layout::{Constraint, Direction, Layout, Rect}, widgets::{List, ListState}, Frame};
 use uuid::Uuid;
 
-use crate::{Task, TaskList};
+use crate::{taskdetailview, Task, TaskList};
 
 #[derive(Default)]
 pub struct TaskListView {
     state: ListState,
-    selected_uuid: Option<Uuid>
+    selected_uuid: Option<Uuid>,
+    details_pane: bool
 }
 
 impl TaskListView {
     /// Renders view to a frame area
     pub fn render(&mut self, frame: &mut Frame, area: Rect, task_list: &TaskList) {
+        let panes = Layout::new(
+            Direction::Horizontal,
+            [
+                Constraint::Min(0),
+                Constraint::Percentage(if self.details_pane { 30 } else { 0 })
+            ]
+            ).split(area);
         let mut filtered_tasks = task_list.filtered_tasks().peekable();
         if self.state.selected().is_none() && filtered_tasks.peek().is_some() {
             if let Some(pos) = task_list.filtered_tasks().rev().position(Task::dot) {
@@ -23,7 +31,8 @@ impl TaskListView {
         let list = List::new(
             filtered_tasks.map(ToString::to_string)
         ).highlight_symbol(">> ");
-        frame.render_stateful_widget(list, area, &mut self.state);
+        frame.render_stateful_widget(list, panes[0], &mut self.state);
+        taskdetailview::render(frame, panes[1], self.selected_uuid(), task_list);
     }
 
     #[must_use]
@@ -178,6 +187,10 @@ impl TaskListView {
             }
         }
         Ok(())
+    }
+
+    pub fn toggle_details_pane(&mut self) {
+        self.details_pane = !self.details_pane;
     }
 
 }

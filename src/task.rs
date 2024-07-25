@@ -1,4 +1,4 @@
-use std::{fmt::Display};
+use std::fmt::Display;
 
 use chrono::{Days, Local, NaiveDateTime, NaiveTime, TimeDelta};
 use serde::{Deserialize, Serialize};
@@ -31,6 +31,43 @@ impl Task {
             recur_interval_days: None,
             snooze_until: None
         }
+    }
+
+    #[must_use]
+    pub fn detail_string(&self) -> String {
+        let mut output = String::new();
+        output.push_str("uuid: ");
+        output.push_str(&self.uuid.to_string());
+        output.push('\n');
+        output.push_str("completed: ");
+        if let Some(completed) = self.completed {
+            output.push_str(&completed.to_string());
+        } else {
+            output.push_str("None");
+        }
+        output.push('\n');
+        output.push_str("recur_next: ");
+        if let Some(recur_next) = self.recur_next {
+            output.push_str(&recur_next.to_string());
+        } else {
+            output.push_str("None");
+        }
+        output.push('\n');
+        output.push_str("recur_interval_days: ");
+        if let Some(recur_interval_days) = self.recur_interval_days {
+            output.push_str(&recur_interval_days.to_string());
+        } else {
+            output.push_str("None");
+        }
+        output.push('\n');
+        output.push_str("snooze_until: ");
+        if let Some(snooze_until) = self.snooze_until {
+            output.push_str(&snooze_until.to_string());
+        } else {
+            output.push_str("None");
+        }
+        output.push('\n');
+        output
     }
 
     /// Sets the task to recur daily
@@ -95,7 +132,7 @@ impl Task {
     }
 
     pub fn unsnooze(&mut self) {
-        self.snooze_until = None
+        self.snooze_until = None;
     }
 
     /// Returns true if the task is not current - i.e. is not complete
