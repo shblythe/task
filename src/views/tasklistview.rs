@@ -1,3 +1,4 @@
+use crossterm::event::KeyCode;
 use ratatui::{layout::Rect, widgets::{List, ListState}, Frame};
 use uuid::Uuid;
 
@@ -193,6 +194,28 @@ impl TaskListView {
             }
         }
         Ok(())
+    }
+
+    /// Attempts to handle keyboard input
+    /// Returns true if it was handled, false if caller should handle
+    ///
+    /// # Errors
+    ///
+    /// Returns `Err` if we attempted to add a task, but the write to storage fails
+    pub fn handle_key(&mut self, code: crossterm::event::KeyCode, tasks: &mut TaskList) -> std::io::Result<bool> {
+        match code {
+            KeyCode::Char('g') => self.move_start(tasks),
+            KeyCode::Char('G') => self.move_end(tasks),
+            KeyCode::Char('j') => self.move_down(tasks),
+            KeyCode::Char('k') => self.move_up(tasks),
+            KeyCode::Char('.') => self.toggle_dot(tasks)?,
+            KeyCode::Char('d') => self.complete(tasks)?,
+            KeyCode::Char('r') => self.recur_daily(tasks)?,
+            KeyCode::Char('z') => self.snooze_tomorrow(tasks)?,
+            KeyCode::Char('Z') => self.snooze_1s(tasks)?,
+            _ => return Ok(false)
+        };
+        Ok(true)
     }
 
 }

@@ -93,21 +93,19 @@ impl MainView {
         });
     }
 
+    /// Returns Ok(false) normally, Ok(true) if we're to quit.
+    ///
+    /// # Errors
+    /// Returns an error if an activity results in a write fail
     fn check_events(&mut self) -> Result<bool> {
         if event::poll(std::time::Duration::from_millis(16))? {
             if let event::Event::Key(key) = event::read()? {
-                if key.kind == KeyEventKind::Press && !self.task_edit_view.handle_key(key.code, &mut self.tasks, self.task_list_view.selected_uuid())? {
+                if key.kind == KeyEventKind::Press
+                        && !self.task_edit_view.handle_key(key.code, &mut self.tasks, self.task_list_view.selected_uuid())?
+                        && !self.task_list_view.handle_key(key.code, &mut self.tasks)?
+                {
                     match key.code {
                         KeyCode::Char('q') => return Ok(true),
-                        KeyCode::Char('g') => self.task_list_view.move_start(&self.tasks),
-                        KeyCode::Char('G') => self.task_list_view.move_end(&self.tasks),
-                        KeyCode::Char('j') => self.task_list_view.move_down(&self.tasks),
-                        KeyCode::Char('k') => self.task_list_view.move_up(&self.tasks),
-                        KeyCode::Char('.') => self.task_list_view.toggle_dot(&mut self.tasks)?,
-                        KeyCode::Char('d') => self.task_list_view.complete(&mut self.tasks)?,
-                        KeyCode::Char('r') => self.task_list_view.recur_daily(&mut self.tasks)?,
-                        KeyCode::Char('z') => self.task_list_view.snooze_tomorrow(&mut self.tasks)?,
-                        KeyCode::Char('Z') => self.task_list_view.snooze_1s(&mut self.tasks)?,
                         KeyCode::Char('p') => self.details_pane = !self.details_pane,
                         KeyCode::Char('h') => self.help_pane = !self.help_pane,
                         KeyCode::Char('f') => { 
