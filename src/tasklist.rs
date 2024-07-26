@@ -9,10 +9,20 @@ const PATH : &str = "tasks.json";
 const BACKUP_PATH : &str = "tasks_backup.json";
 const CONFIG_DIR : &str = "task";
 
-#[derive(Default)]
 pub struct TaskList {
     tasks: Vec<Task>,
     show_completed: bool,
+    future_filter: bool
+}
+
+impl Default for TaskList {
+    fn default() -> Self {
+        Self {
+            tasks: Vec::default(),
+            show_completed: Default::default(),
+            future_filter: true
+        }
+    }
 }
 
 impl TaskList {
@@ -45,7 +55,7 @@ impl TaskList {
         let tasks = serde_json::from_str(&serialized)?;
         let mut task_list = TaskList {
             tasks,
-            show_completed: false,
+            ..Default::default()
         };
         task_list.reset_recurring_and_snoozed()?;
         Ok(task_list)
@@ -62,11 +72,11 @@ impl TaskList {
     }
 
     #[must_use]
-    pub fn filtered_tasks(&self, future_filter: bool) -> Box<dyn DoubleEndedIterator<Item = &Task> + '_> {
+    pub fn filtered_tasks(&self) -> Box<dyn DoubleEndedIterator<Item = &Task> + '_> {
         if !self.show_completed {
             return Box::new(self.tasks.iter().filter(move |t|
                     !t.is_complete()
-                    && (!future_filter || !t.not_current())
+                    && (!self.future_filter || !t.not_current())
                     ));
         }
         Box::new(self.tasks.iter())
@@ -192,5 +202,10 @@ impl TaskList {
         file.write_all(serialized.as_bytes())?;
         Ok(())
     }
+
+    pub fn toggle_future_filter(&mut self) {
+        self.future_filter = !self.future_filter;
+    }
+
 }
 
