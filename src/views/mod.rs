@@ -5,6 +5,7 @@ pub mod taskeditview;
 pub use taskeditview::*;
 
 pub mod taskdetailview;
+pub mod helpview;
 
 pub mod popup;
 

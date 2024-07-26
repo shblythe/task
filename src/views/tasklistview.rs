@@ -1,13 +1,14 @@
 use ratatui::{layout::{Constraint, Direction, Layout, Rect}, widgets::{List, ListState}, Frame};
 use uuid::Uuid;
 
-use crate::{taskdetailview, Task, TaskList};
+use crate::{helpview, taskdetailview, Task, TaskList};
 
 #[derive(Default)]
 pub struct TaskListView {
     state: ListState,
     selected_uuid: Option<Uuid>,
-    details_pane: bool
+    details_pane: bool,
+    help_pane: bool
 }
 
 impl TaskListView {
@@ -17,7 +18,8 @@ impl TaskListView {
             Direction::Horizontal,
             [
                 Constraint::Min(0),
-                Constraint::Percentage(if self.details_pane { 30 } else { 0 })
+                Constraint::Percentage(if self.details_pane { 30 } else { 0 }),
+                Constraint::Length(if self.help_pane { helpview::WIDTH } else { 0 }),
             ]
             ).split(area);
         let mut filtered_tasks = task_list.filtered_tasks().peekable();
@@ -33,6 +35,7 @@ impl TaskListView {
         ).highlight_symbol(">> ");
         frame.render_stateful_widget(list, panes[0], &mut self.state);
         taskdetailview::render(frame, panes[1], self.selected_uuid(), task_list);
+        helpview::render(frame, panes[2]);
     }
 
     #[must_use]
@@ -191,6 +194,10 @@ impl TaskListView {
 
     pub fn toggle_details_pane(&mut self) {
         self.details_pane = !self.details_pane;
+    }
+
+    pub fn toggle_help_pane(&mut self) {
+        self.help_pane = !self.help_pane;
     }
 
 }
