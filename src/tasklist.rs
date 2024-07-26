@@ -129,6 +129,29 @@ impl TaskList {
         let _ = self.replace_at_bottom_saveopt(uuid, task, false);
     }
 
+    /// Performs pre-render processing.
+    /// MUST be called before each time the list is going to be rendered
+    /// (i.e. ``filtered_tasks`` is going to be called to obtain task list)
+    ///
+    /// # Errors
+    /// Returns an error if it failed to write data to disk
+    pub fn pre_render(&mut self) -> std::io::Result<()> {
+        self.reset_snoozed()
+    }
+
+    /// Move all snoozed tasks to bottom, remove dots if present
+    /// We need to do this on every render cycle, for snoozed tasks ONLY 
+    /// to ensure that any that tasks that become unsnoozed are moved to the bottom in
+    /// real-time and not just on next startup
+    fn reset_snoozed(&mut self) -> std::io::Result<()> {
+        self.reset_task_positions(true, false)
+    }
+
+    /// Move all recurring and unsnoozed tasks to bottom, remove dots if present
+    fn reset_recurring_and_snoozed(&mut self) -> std::io::Result<()> {
+        self.reset_task_positions(true, true)
+    }
+
     /// Move all recurring tasks to bottom, remove dots if present
     ///
     /// NOTE!
@@ -136,10 +159,10 @@ impl TaskList {
     /// possible, then we'd need to fix.
     /// Basically, if a task is both recurring and snoozed, it will currently be unsnoozed by this
     /// method, which isn't what we'd want.
-    fn reset_recurring_and_snoozed(&mut self) -> std::io::Result<()> {
+    fn reset_task_positions(&mut self, snoozed: bool, recurring: bool) -> std::io::Result<()> {
         let mut reset_uuids : Vec<Uuid> = vec![];
         for task in &self.tasks {
-            if task.snooze_expiring() || task.is_recurring() {
+            if snoozed && task.snooze_expiring() || recurring && task.is_recurring() {
                 reset_uuids.push(task.uuid());
             }
         }

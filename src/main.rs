@@ -89,6 +89,10 @@ fn main() -> Result<()> {
 
     let mut terminal = setup_ratatui()?;
     loop {
+        match tasks.pre_render() {
+            Ok(()) => (),
+            _ => write_fails += 1
+        }
         render(&mut terminal, &mut task_list_view, &task_edit_view, &tasks, task_load_failed, write_fails)?;
         match check_events(&mut task_list_view, &mut task_edit_view, &mut tasks) {
             Ok(true) => break,

@@ -25,6 +25,15 @@ impl Default for TaskListView  {
 
 impl TaskListView {
 
+    /// Processes data before rendering.
+    /// MUST be called before any call to ``render()``
+    ///
+    /// # Errors
+    /// Returns an error if write to disk failed
+    pub fn pre_render(&mut self, task_list: &mut TaskList) -> std::io::Result<()> {
+        task_list.pre_render()
+    }
+
     /// Renders view to a frame area
     pub fn render(&mut self, frame: &mut Frame, area: Rect, task_list: &TaskList) {
         let panes = Layout::new(
