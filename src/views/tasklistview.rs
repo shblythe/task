@@ -1,5 +1,5 @@
 use crossterm::event::KeyCode;
-use ratatui::{layout::Rect, widgets::{List, ListState}, Frame};
+use ratatui::{layout::Rect, text::Text, widgets::{List, ListState}, Frame};
 use uuid::Uuid;
 
 use crate::{Task, TaskList};
@@ -216,6 +216,35 @@ impl TaskListView {
             _ => return Ok(false)
         };
         Ok(true)
+    }
+
+    pub const WIDTH : u16 = 32;
+
+    pub fn render_help(&self, frame: &mut Frame, area: Rect) -> bool {
+        frame.render_widget(Text::from(
+" Keyboard commands
+ -----------------
+ q - Quit
+ 
+ g - Move to start
+ k - Move up
+ j - Move down
+ G - Move to end
+ 
+ a - add task
+ . - Toggle dot
+ d - Mark as done
+ r - Toggle daily recurring
+ z - Snooze until tomorrow
+ Z - Snooze for 1s (test)
+ 
+ f - Toggle future task filter
+
+ h - Toggle help pane
+ p - Toggle details pane
+"
+                ), area);
+        true
     }
 
 }

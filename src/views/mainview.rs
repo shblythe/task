@@ -3,7 +3,7 @@ use std::io::{Result, Stdout};
 use crossterm::event::{self, KeyCode, KeyEventKind};
 use ratatui::{backend::CrosstermBackend, layout::{Constraint, Direction, Layout, Rect}, widgets::{Block, Borders}, Frame, Terminal};
 
-use crate::{helpview, taskdetailview, TaskEditView, TaskList, TaskListView};
+use crate::{taskdetailview, TaskEditView, TaskList, TaskListView};
 
 pub struct MainView {
     tasks: TaskList,
@@ -51,18 +51,25 @@ impl MainView {
         }
     }
 
+    pub fn render_help(&self, frame: &mut Frame, area: Rect) {
+        let block = Block::new().title("Help").borders(Borders::all());
+        let inner = block.inner(area);
+        self.task_list_view.render_help(frame, inner);
+        frame.render_widget(block, area);
+    }
+
     fn render_panes(&mut self, frame: &mut Frame, area: Rect) {
         let panes = Layout::new(
             Direction::Horizontal,
             [
                 Constraint::Min(0),
                 Constraint::Percentage(if self.details_pane { 30 } else { 0 }),
-                Constraint::Length(if self.help_pane { helpview::WIDTH } else { 0 }),
+                Constraint::Length(if self.help_pane { 35 } else { 0 }),
             ]
             ).split(area);
         self.task_list_view.render(frame, panes[0], &self.tasks);
         taskdetailview::render(frame, panes[1], self.task_list_view.selected_uuid(), &self.tasks);
-        helpview::render(frame, panes[2]);
+        self.render_help(frame, panes[2]);
     }
 
     fn render(&mut self, terminal: &mut Terminal<CrosstermBackend<Stdout>>) {
