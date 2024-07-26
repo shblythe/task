@@ -197,6 +197,7 @@ impl Display for Task {
 
         f.write_str(
             if self.is_complete() { "D " }
+            else if self.not_current() { "F " }
             else if self.dot { "- " }
             else { "  " }
         )?;

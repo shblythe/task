@@ -17,6 +17,8 @@ const HELP_TEXT : &str =
  z - Snooze until tomorrow
  Z - Snooze for 1s (test)
  
+ f - Toggle future task filter
+
  h - Toggle help pane
  p - Toggle details pane
 ";

@@ -3,15 +3,28 @@ use uuid::Uuid;
 
 use crate::{helpview, taskdetailview, Task, TaskList};
 
-#[derive(Default)]
 pub struct TaskListView {
     state: ListState,
     selected_uuid: Option<Uuid>,
     details_pane: bool,
-    help_pane: bool
+    help_pane: bool,
+    future_filter:bool
+}
+
+impl Default for TaskListView  {
+    fn default() -> Self {
+        TaskListView {
+            state: ListState::default(),
+            selected_uuid: Option::default(),
+            details_pane: bool::default(),
+            help_pane: bool::default(),
+            future_filter: true
+        }
+    }
 }
 
 impl TaskListView {
+
     /// Renders view to a frame area
     pub fn render(&mut self, frame: &mut Frame, area: Rect, task_list: &TaskList) {
         let panes = Layout::new(
@@ -22,10 +35,10 @@ impl TaskListView {
                 Constraint::Length(if self.help_pane { helpview::WIDTH } else { 0 }),
             ]
             ).split(area);
-        let mut filtered_tasks = task_list.filtered_tasks().peekable();
+        let mut filtered_tasks = task_list.filtered_tasks(self.future_filter).peekable();
         if self.state.selected().is_none() && filtered_tasks.peek().is_some() {
-            if let Some(pos) = task_list.filtered_tasks().rev().position(Task::dot) {
-                self.select(task_list, task_list.filtered_tasks().count()-1 - pos);
+            if let Some(pos) = task_list.filtered_tasks(self.future_filter).rev().position(Task::dot) {
+                self.select(task_list, task_list.filtered_tasks(self.future_filter).count()-1 - pos);
             } else {
                 self.select(task_list, 0);
             }
@@ -44,7 +57,7 @@ impl TaskListView {
     }
 
     fn select(&mut self, task_list: &TaskList, index: usize) {
-        if let Some(task) = task_list.filtered_tasks().nth(index) {
+        if let Some(task) = task_list.filtered_tasks(self.future_filter).nth(index) {
             self.selected_uuid = Some(task.uuid());
         } else {
             self.selected_uuid = None;
@@ -56,7 +69,7 @@ impl TaskListView {
     /// to re-select the current index, and defaulting to the bottom task
     /// otherwise.
     fn fix_selection(&mut self, task_list: &TaskList) {
-        let last_index = task_list.filtered_tasks().count() - 1;
+        let last_index = task_list.filtered_tasks(self.future_filter).count() - 1;
         let index = usize::min(self.state.selected().unwrap_or(last_index), last_index);
         self.select(task_list, index);
     }
@@ -71,7 +84,7 @@ impl TaskListView {
 
     pub fn move_down(&mut self, task_list: &TaskList) {
         if let Some(current) = self.state.selected() {
-            if current < task_list.filtered_tasks().count()-1 {
+            if current < task_list.filtered_tasks(self.future_filter).count()-1 {
                 self.select(task_list, current + 1);
             }
         }
@@ -82,7 +95,7 @@ impl TaskListView {
     }
 
     pub fn move_end(&mut self, task_list: &TaskList) {
-        self.select(task_list, task_list.filtered_tasks().count()-1);
+        self.select(task_list, task_list.filtered_tasks(self.future_filter).count()-1);
     }
 
     /// Toggles the 'dot' on the currently selected task, and attempt to
@@ -198,6 +211,11 @@ impl TaskListView {
 
     pub fn toggle_help_pane(&mut self) {
         self.help_pane = !self.help_pane;
+    }
+
+    pub fn toggle_future_filter(&mut self, task_list: &TaskList) {
+        self.future_filter = !self.future_filter;
+        self.fix_selection(task_list);
     }
 
 }

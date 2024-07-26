@@ -72,6 +72,7 @@ fn check_events(task_list_view: &mut TaskListView, task_edit_view: &mut TaskEdit
                     KeyCode::Char('Z') => task_list_view.snooze_1s(task_list)?,
                     KeyCode::Char('p') => task_list_view.toggle_details_pane(),
                     KeyCode::Char('h') => task_list_view.toggle_help_pane(),
+                    KeyCode::Char('f') => task_list_view.toggle_future_filter(task_list),
                     _ => ()
                 }
             }
