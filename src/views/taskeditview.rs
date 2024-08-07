@@ -166,5 +166,30 @@ impl TaskEditView {
             }
         }
     }
+
+    pub fn render_help(&self, frame: &mut Frame, area: Rect) -> bool {
+        match self.mode {
+            InputMode::Editing => {
+                frame.render_widget(Text::from(
+            " Edit mode help
+ --------------
+ ENT  - Save task
+ Esc  - cancel edit/create
+ 
+ Home - Move to start
+ End  - Move to end
+ Bksp - Delete before cursor
+ Del  - Delete at cursor
+
+ Use cursor keys to move cursor
+ left and right
+"
+                        ), area);
+                true
+            }
+            InputMode::Normal => false,
+        }
+    }
+
 }
 

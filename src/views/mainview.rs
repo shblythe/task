@@ -54,7 +54,9 @@ impl MainView {
     pub fn render_help(&self, frame: &mut Frame, area: Rect) {
         let block = Block::new().title("Help").borders(Borders::all());
         let inner = block.inner(area);
-        self.task_list_view.render_help(frame, inner);
+        if !self.task_edit_view.render_help(frame, inner) {
+            self.task_list_view.render_help(frame, inner);
+        }
         frame.render_widget(block, area);
     }
 
