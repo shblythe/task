@@ -36,6 +36,9 @@ impl Task {
     #[must_use]
     pub fn detail_string(&self) -> String {
         let mut output = String::new();
+        output.push_str(&self.description);
+        output.push('\n');
+        output.push('\n');
         output.push_str("uuid: ");
         output.push_str(&self.uuid.to_string());
         output.push('\n');

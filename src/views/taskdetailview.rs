@@ -1,4 +1,4 @@
-use ratatui::{layout::Rect, text::Text, widgets::{Block, Borders}, Frame};
+use ratatui::{layout::Rect, widgets::{Block, Borders, Paragraph, Wrap}, Frame};
 use uuid::Uuid;
 
 use crate::TaskList;
@@ -10,9 +10,9 @@ pub fn render(frame: &mut Frame, area: Rect, task_uuid: Option<Uuid>, task_list:
         None
     };
     let task_text = if let Some(task) = task {
-        Text::from(task.detail_string())
+        Paragraph::new(task.detail_string()).wrap(Wrap { trim: false })
     } else {
-        Text::from("Invalid task selected")
+        Paragraph::new("Invalid task selected")
     };
     let block = Block::new().title("Task Details").borders(Borders::all());
     let inner = block.inner(area);
