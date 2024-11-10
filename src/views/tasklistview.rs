@@ -10,7 +10,6 @@ pub struct TaskListView {
     selected_uuid: Option<Uuid>,
 }
 
-
 impl TaskListView {
 
     /// Processes data before rendering.
@@ -42,6 +41,12 @@ impl TaskListView {
     #[must_use]
     pub fn selected_uuid(&self) -> Option<Uuid> {
         self.selected_uuid
+    }
+
+    #[must_use]
+    pub fn selected_index(&self, task_list: &TaskList) -> Option<usize> {
+        self.selected_uuid.and_then(
+            |selected_uuid| task_list.filtered_tasks().position(|t| t.uuid()==selected_uuid))
     }
 
     fn select(&mut self, task_list: &TaskList, index: usize) {
