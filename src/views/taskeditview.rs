@@ -1,4 +1,4 @@
-use crossterm::event::KeyCode;
+use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{layout::Rect, style::Style, text::{Line, Span, Text}, Frame};
 use uuid::Uuid;
 
@@ -124,44 +124,50 @@ impl TaskEditView {
     /// # Errors
     ///
     /// Returns `Err` if we attempted to add a task, but the write to storage fails
-    pub fn handle_key(&mut self, code: KeyCode, task_list: &mut TaskList, selected_uuid: Option<Uuid>) -> std::io::Result<bool> {
+    pub fn handle_key(&mut self, key: KeyEvent, task_list: &mut TaskList, selected_uuid: Option<Uuid>) -> std::io::Result<bool> {
         match self.mode {
             InputMode::Normal => {
-                match code {
-                    KeyCode::Char('a') => {
-                        self.mode = InputMode::Editing;
-                        self.task_uuid = None;
-                        Ok(true)
-                    },
-                    KeyCode::Char('m') => {
-                        if let Some(task_uuid) = selected_uuid {
+                if key.modifiers.is_empty() {
+                    match key.code {
+                        KeyCode::Char('a') => {
                             self.mode = InputMode::Editing;
-                            self.task_uuid = Some(task_uuid);
-                            if let Some(task) = task_list.get(task_uuid) {
-                                self.input = task.description().to_string();
-                                self.index = self.input.len();
-                            }
+                            self.task_uuid = None;
                             Ok(true)
-                        } else {
-                            Ok(false)
+                        },
+                        KeyCode::Char('m') => {
+                            if let Some(task_uuid) = selected_uuid {
+                                self.mode = InputMode::Editing;
+                                self.task_uuid = Some(task_uuid);
+                                if let Some(task) = task_list.get(task_uuid) {
+                                    self.input = task.description().to_string();
+                                    self.index = self.input.len();
+                                }
+                                Ok(true)
+                            } else {
+                                Ok(false)
+                            }
                         }
+                        _ => Ok(false)
                     }
-                    _ => Ok(false)
+                } else {
+                    Ok(false)
                 }
             },
             InputMode::Editing => {
-                match code {
-                    KeyCode::Enter => self.save_task(task_list)?,
-                    KeyCode::Char(to_insert) => self.enter_char(to_insert),
-                    KeyCode::Backspace => self.backspace_delete(),
-                    KeyCode::Left => self.cursor_left(),
-                    KeyCode::Right => self.cursor_right(),
-                    KeyCode::Esc => self.mode = InputMode::Normal,
-                    KeyCode::Home => self.index = 0,
-                    KeyCode::End => self.index = self.input.len(),
-                    KeyCode::Delete => self.delete_at_cursor(),
-                    _ => ()
-                };
+                if key.modifiers.is_empty() {
+                    match key.code {
+                        KeyCode::Enter => self.save_task(task_list)?,
+                        KeyCode::Char(to_insert) => self.enter_char(to_insert),
+                        KeyCode::Backspace => self.backspace_delete(),
+                        KeyCode::Left => self.cursor_left(),
+                        KeyCode::Right => self.cursor_right(),
+                        KeyCode::Esc => self.mode = InputMode::Normal,
+                        KeyCode::Home => self.index = 0,
+                        KeyCode::End => self.index = self.input.len(),
+                        KeyCode::Delete => self.delete_at_cursor(),
+                        _ => ()
+                    };
+                }
                 Ok(true)
             }
         }

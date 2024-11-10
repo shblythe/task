@@ -110,14 +110,14 @@ impl MainView {
         if event::poll(std::time::Duration::from_millis(16))? {
             if let event::Event::Key(key) = event::read()? {
                 if key.kind == KeyEventKind::Press
-                        && !self.task_edit_view.handle_key(key.code, &mut self.tasks, self.task_list_view.selected_uuid())?
-                        && !self.task_list_view.handle_key(key.code, &mut self.tasks)?
+                        && !self.task_edit_view.handle_key(key, &mut self.tasks, self.task_list_view.selected_uuid())?
+                        && !self.task_list_view.handle_key(key, &mut self.tasks)?
                 {
                     match key.code {
                         KeyCode::Char('q') => return Ok(true),
                         KeyCode::Char('p') => self.details_pane = !self.details_pane,
                         KeyCode::Char('h') => self.help_pane = !self.help_pane,
-                        KeyCode::Char('f') => { 
+                        KeyCode::Char('f') => {
                             self.tasks.toggle_future_filter();
                             self.task_list_view.fix_selection(&self.tasks);
                         },

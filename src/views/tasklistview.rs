@@ -1,4 +1,4 @@
-use crossterm::event::KeyCode;
+use crossterm::event::{KeyCode, KeyModifiers};
 use ratatui::{layout::Rect, text::Text, widgets::{List, ListState}, Frame};
 use uuid::Uuid;
 
@@ -8,6 +8,7 @@ use crate::{Task, TaskList};
 pub struct TaskListView {
     state: ListState,
     selected_uuid: Option<Uuid>,
+    last_rendered_area: Option<Rect>
 }
 
 impl TaskListView {
@@ -35,7 +36,7 @@ impl TaskListView {
             filtered_tasks.map(ToString::to_string)
         ).highlight_symbol(">> ");
         frame.render_stateful_widget(list, area, &mut self.state);
-
+        self.last_rendered_area = Some(area);
     }
 
     #[must_use]
@@ -70,20 +71,32 @@ impl TaskListView {
         self.select(task_list, index);
     }
 
-    pub fn move_up(&mut self, task_list: &TaskList) {
+    pub fn move_up_n(&mut self, task_list: &TaskList, n: usize) {
         if let Some(current) = self.state.selected() {
-            if current > 0 {
-                self.select(task_list, current - 1);
+            if current > n {
+                self.select(task_list, current - n);
+            } else {
+                self.select(task_list, 0);
+            }
+        }
+    }
+
+    pub fn move_up(&mut self, task_list: &TaskList) {
+        self.move_up_n(task_list, 1);
+    }
+
+    pub fn move_down_n(&mut self, task_list: &TaskList, n: usize) {
+        if let Some(current) = self.state.selected() {
+            if current+n < task_list.filtered_tasks().count()-1 {
+                self.select(task_list, current + n);
+            } else {
+                self.select(task_list, task_list.filtered_tasks().count()-1);
             }
         }
     }
 
     pub fn move_down(&mut self, task_list: &TaskList) {
-        if let Some(current) = self.state.selected() {
-            if current < task_list.filtered_tasks().count()-1 {
-                self.select(task_list, current + 1);
-            }
-        }
+        self.move_down_n(task_list, 1);
     }
 
     pub fn move_start(&mut self, task_list: &TaskList) {
@@ -207,19 +220,32 @@ impl TaskListView {
     /// # Errors
     ///
     /// Returns `Err` if we attempted to add a task, but the write to storage fails
-    pub fn handle_key(&mut self, code: crossterm::event::KeyCode, tasks: &mut TaskList) -> std::io::Result<bool> {
-        match code {
-            KeyCode::Char('g') => self.move_start(tasks),
-            KeyCode::Char('G') => self.move_end(tasks),
-            KeyCode::Char('j') => self.move_down(tasks),
-            KeyCode::Char('k') => self.move_up(tasks),
-            KeyCode::Char('.') => self.toggle_dot(tasks)?,
-            KeyCode::Char('d') => self.complete(tasks)?,
-            KeyCode::Char('r') => self.recur_daily(tasks)?,
-            KeyCode::Char('z') => self.snooze_tomorrow(tasks)?,
-            KeyCode::Char('Z') => self.snooze_1s(tasks)?,
-            _ => return Ok(false)
+    pub fn handle_key(&mut self, key: crossterm::event::KeyEvent, tasks: &mut TaskList) -> std::io::Result<bool> {
+        let page_height: usize = if let Some(area) = self.last_rendered_area {
+            Into::<usize>::into(area.height)/2
+        } else {
+            1
         };
+        if !key.modifiers.intersects(KeyModifiers::CONTROL | KeyModifiers::ALT) {
+            match key.code {
+                KeyCode::Char('g') => self.move_start(tasks),
+                KeyCode::Char('G') => self.move_end(tasks),
+                KeyCode::Char('j') => self.move_down(tasks),
+                KeyCode::Char('k') => self.move_up(tasks),
+                KeyCode::Char('.') => self.toggle_dot(tasks)?,
+                KeyCode::Char('d') => self.complete(tasks)?,
+                KeyCode::Char('r') => self.recur_daily(tasks)?,
+                KeyCode::Char('z') => self.snooze_tomorrow(tasks)?,
+                KeyCode::Char('Z') => self.snooze_1s(tasks)?,
+                _ => return Ok(false)
+            };
+        } else if key.modifiers.intersects(KeyModifiers::CONTROL) {
+            match key.code {
+                KeyCode::Char('u') => self.move_up_n(tasks, page_height),
+                KeyCode::Char('d') => self.move_down_n(tasks, page_height),
+                _ => return Ok(false)
+            }
+        }
         Ok(true)
     }
 
@@ -230,19 +256,19 @@ impl TaskListView {
 " Keyboard commands
  -----------------
  q - Quit
- 
+
  g - Move to start
  k - Move up
  j - Move down
  G - Move to end
- 
+
  a - add task
  . - Toggle dot
  d - Mark as done
  r - Toggle daily recurring
  z - Snooze until tomorrow
  Z - Snooze for 1s (test)
- 
+
  f - Toggle future task filter
 
  h - Toggle help pane
