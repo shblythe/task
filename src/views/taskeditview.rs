@@ -154,20 +154,18 @@ impl TaskEditView {
                 }
             },
             InputMode::Editing => {
-                if key.modifiers.is_empty() {
-                    match key.code {
-                        KeyCode::Enter => self.save_task(task_list)?,
-                        KeyCode::Char(to_insert) => self.enter_char(to_insert),
-                        KeyCode::Backspace => self.backspace_delete(),
-                        KeyCode::Left => self.cursor_left(),
-                        KeyCode::Right => self.cursor_right(),
-                        KeyCode::Esc => self.mode = InputMode::Normal,
-                        KeyCode::Home => self.index = 0,
-                        KeyCode::End => self.index = self.input.len(),
-                        KeyCode::Delete => self.delete_at_cursor(),
-                        _ => ()
-                    };
-                }
+                match key.code {
+                    KeyCode::Enter => self.save_task(task_list)?,
+                    KeyCode::Char(to_insert) => self.enter_char(to_insert),
+                    KeyCode::Backspace => self.backspace_delete(),
+                    KeyCode::Left => self.cursor_left(),
+                    KeyCode::Right => self.cursor_right(),
+                    KeyCode::Esc => self.mode = InputMode::Normal,
+                    KeyCode::Home => self.index = 0,
+                    KeyCode::End => self.index = self.input.len(),
+                    KeyCode::Delete => self.delete_at_cursor(),
+                    _ => ()
+                };
                 Ok(true)
             }
         }
