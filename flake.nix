@@ -14,10 +14,6 @@
                     clippy
                     rustc
                 ];
-                shellHook = ''
-                    # bash to run when you enter the shell
-                    ls
-                '';
             };
         };
 }
