@@ -107,7 +107,7 @@ impl MainView {
     /// # Errors
     /// Returns an error if an activity results in a write fail
     fn check_events(&mut self) -> Result<bool> {
-        if event::poll(std::time::Duration::from_millis(16))? {
+        if event::poll(std::time::Duration::from_millis(1000))? {
             if let event::Event::Key(key) = event::read()? {
                 if key.kind == KeyEventKind::Press
                         && !self.task_edit_view.handle_key(key, &mut self.tasks, self.task_list_view.selected_uuid())?
