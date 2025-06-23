@@ -12,7 +12,8 @@ const CONFIG_DIR : &str = "task";
 pub struct TaskList {
     tasks: Vec<Task>,
     show_completed: bool,
-    future_filter: bool
+    future_filter: bool,
+    show_dotted_only: bool
 }
 
 impl Default for TaskList {
@@ -20,7 +21,8 @@ impl Default for TaskList {
         Self {
             tasks: Vec::default(),
             show_completed: Default::default(),
-            future_filter: true
+            future_filter: true,
+            show_dotted_only: Default::default()
         }
     }
 }
@@ -62,7 +64,7 @@ impl TaskList {
     }
 
     /// Attempts to add a task to the list, and write to storage.
-    /// 
+    ///
     /// # Errors
     ///
     /// Will return `Err` if the write to storage fails
@@ -77,6 +79,7 @@ impl TaskList {
             return Box::new(self.tasks.iter().filter(move |t|
                     !t.is_complete()
                     && (!self.future_filter || !t.not_current())
+                    && (!self.show_dotted_only || t.dot())
                     ));
         }
         Box::new(self.tasks.iter())
@@ -96,7 +99,7 @@ impl TaskList {
 
     /// Attempts to replace a task in the list, and write to storage.
     /// Fails silently if the task to replace isn't found!
-    /// 
+    ///
     /// # Errors
     ///
     /// Will return `Err` if the write to storage fails
@@ -113,7 +116,7 @@ impl TaskList {
     /// Attempts to replace a task in the list, but repositioned to the bottom
     /// and write to storage.
     /// Fails silently if the task to replace isn't found!
-    /// 
+    ///
     /// # Errors
     ///
     /// Will return `Err` if the write to storage fails
@@ -150,7 +153,7 @@ impl TaskList {
     }
 
     /// Move all snoozed tasks to bottom, remove dots if present
-    /// We need to do this on every render cycle, for snoozed tasks ONLY 
+    /// We need to do this on every render cycle, for snoozed tasks ONLY
     /// to ensure that any that tasks that become unsnoozed are moved to the bottom in
     /// real-time and not just on next startup
     fn reset_snoozed(&mut self) -> std::io::Result<()> {
@@ -205,6 +208,10 @@ impl TaskList {
 
     pub fn toggle_future_filter(&mut self) {
         self.future_filter = !self.future_filter;
+    }
+
+    pub fn toggle_dotted_only(&mut self) {
+        self.show_dotted_only = !self.show_dotted_only
     }
 
 }

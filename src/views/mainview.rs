@@ -121,6 +121,10 @@ impl MainView {
                             self.tasks.toggle_future_filter();
                             self.task_list_view.fix_selection(&self.tasks);
                         },
+                        KeyCode::Char('o') => {
+                            self.tasks.toggle_dotted_only();
+                            self.task_list_view.fix_selection(&self.tasks);
+                        },
                         _ => ()
                     }
                 }

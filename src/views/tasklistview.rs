@@ -68,6 +68,7 @@ impl TaskListView {
     pub fn fix_selection(&mut self, task_list: &TaskList) {
         let last_index = task_list.filtered_tasks().count() - 1;
         let index = usize::min(self.state.selected().unwrap_or(last_index), last_index);
+        *self.state.offset_mut() = 0;
         self.select(task_list, index);
     }
 
@@ -270,6 +271,7 @@ impl TaskListView {
  Z - Snooze for 1s (test)
 
  f - Toggle future task filter
+ o - Toggle dotted only filter
 
  h - Toggle help pane
  p - Toggle details pane
