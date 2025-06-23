@@ -76,7 +76,7 @@ impl MainView {
 
     fn render(&mut self, terminal: &mut Terminal<CrosstermBackend<Stdout>>) {
         let _ = terminal.draw(|frame| {
-            let area = frame.size();
+            let area = frame.area();
             let main_layout = Layout::new(
                 Direction::Vertical,
                 [
