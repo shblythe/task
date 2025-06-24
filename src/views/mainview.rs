@@ -1,14 +1,19 @@
 use std::io::{Result, Stdout};
 
 use crossterm::event::{self, KeyCode, KeyEventKind};
-use ratatui::{backend::CrosstermBackend, layout::{Constraint, Direction, Layout, Rect}, widgets::{Block, Borders}, Frame, Terminal};
+use ratatui::{backend::CrosstermBackend,
+    layout::{Constraint, Direction, Layout, Rect},
+    style::{Stylize },
+    widgets::{Block, Borders },
+    Frame, Terminal};
 
-use crate::{taskdetailview, TaskEditView, TaskList, TaskListView};
+use crate::{taskdetailview, TaskEditView, TaskList, TaskListView, TaskDoneView};
 
 pub struct MainView {
     tasks: TaskList,
     load_failed: bool,
     task_list_view: TaskListView,
+    task_done_view: TaskDoneView,
     task_edit_view: TaskEditView,
     write_fails: i32,
     details_pane: bool,
@@ -29,6 +34,7 @@ impl MainView {
             tasks,
             load_failed,
             task_list_view: TaskListView::default(),
+            task_done_view: TaskDoneView::default(),
             task_edit_view: TaskEditView::default(),
             write_fails: i32::default(),
             details_pane: bool::default(),
@@ -69,7 +75,19 @@ impl MainView {
                 Constraint::Length(if self.help_pane { 35 } else { 0 }),
             ]
             ).split(area);
-        self.task_list_view.render(frame, panes[0], &self.tasks);
+        let task_list_panes = Layout::new(
+            Direction::Vertical,
+            [
+                Constraint::Length(1),
+                Constraint::Length(10),
+                Constraint::Length(1),
+                Constraint::Min(0)
+            ]
+        ).split(panes[0]);
+        frame.render_widget(Block::new().borders(Borders::TOP).title("Done today ".green()), task_list_panes[0]);
+        self.task_done_view.render(frame, task_list_panes[1], &self.tasks);
+        frame.render_widget(Block::new().borders(Borders::TOP).title("Todo "), task_list_panes[2]);
+        self.task_list_view.render(frame, task_list_panes[3], &self.tasks);
         taskdetailview::render(frame, panes[1], self.task_list_view.selected_uuid(), &self.tasks);
         self.render_help(frame, panes[2]);
     }
@@ -86,7 +104,7 @@ impl MainView {
                     Constraint::Length(1),
                 ]
                 ).split(area);
-            frame.render_widget(Block::new().borders(Borders::TOP).title("Tasks"), main_layout[0]);
+            frame.render_widget(Block::new().borders(Borders::TOP).title("Tasks ".bold()), main_layout[0]);
             self.render_panes(frame, main_layout[1]);
             self.task_edit_view.render(frame, main_layout[2]);
             frame.render_widget(Block::new().borders(Borders::TOP).title(

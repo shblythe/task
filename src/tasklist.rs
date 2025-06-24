@@ -1,6 +1,7 @@
 use std::{fs::{create_dir_all, read_to_string, rename, File}, io::Write, path::{Path, PathBuf}};
 
 use dirs::config_local_dir;
+use itertools::Itertools;
 use uuid::Uuid;
 
 use crate::Task;
@@ -83,6 +84,15 @@ impl TaskList {
                     ));
         }
         Box::new(self.tasks.iter())
+    }
+
+    #[must_use]
+    pub fn tasks_done_today(&self) -> Box<dyn DoubleEndedIterator<Item = &Task> + '_> {
+        return Box::new(
+            self.tasks.iter().filter(
+                move |t| t.completed_today()
+            ).sorted_by(|a, b| b.completed_date_time().cmp(&a.completed_date_time()))
+        );
     }
 
     /// Returns a slice containing all the tasks

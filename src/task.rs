@@ -193,6 +193,26 @@ impl Task {
     pub fn is_complete(&self) -> bool {
         self.completed.is_some()
     }
+
+    #[must_use]
+    pub fn completed_today(&self) -> bool {
+        if let Some(completed) = self.completed {
+            Local::now().naive_local().date() == completed.date()
+        } else {
+            false
+        }
+    }
+
+    #[must_use]
+    pub fn completed_date_time(&self) -> NaiveDateTime {
+        if let Some(completed) = self.completed {
+            completed
+        } else {
+            // TODO: This isn't particularly nice, but if the task isn't completed
+            // we don't care what the date/time of completion is.
+            Local::now().naive_local()
+        }
+    }
 }
 
 impl Display for Task {

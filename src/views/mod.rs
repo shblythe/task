@@ -1,6 +1,9 @@
 pub mod tasklistview;
 pub use tasklistview::*;
 
+pub mod taskdoneview;
+pub use taskdoneview::*;
+
 pub mod taskeditview;
 pub use taskeditview::*;
 
