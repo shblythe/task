@@ -42,7 +42,10 @@ impl MainView {
         }
     }
 
-    pub fn run(&mut self, terminal: &mut Terminal<CrosstermBackend<Stdout>>) {
+    pub fn run(&mut self, terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> bool{
+        if TaskList::check_lock_file().is_err() {
+            return false;
+        }
         loop {
             match self.tasks.pre_render() {
                 Ok(()) => (),
@@ -55,6 +58,11 @@ impl MainView {
                 _ => self.write_fails += 1
             }
         }
+        // Ignore the (unlikely) error.  The failure will affect subsequent runs, and we'll
+        // see an error then which we can resolve by manually deleting the lock,
+        // if appropriate.
+        let _ = TaskList::clear_lock_file();
+        true
     }
 
     pub fn render_help(&self, frame: &mut Frame, area: Rect) {

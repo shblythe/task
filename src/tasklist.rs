@@ -246,6 +246,34 @@ impl TaskList {
         Ok(())
     }
 
+    /// Checks if the lock file is there, and returns error if it is, otherwise creates it.
+    ///
+    /// # Errors
+    /// Will return `Err` if the lock file already exists, or if we can't create it.
+    pub fn check_lock_file() -> std::io::Result<()> {
+        let lock_file_path = Self::config_dir_pathbuf().join("task.lock");
+        if lock_file_path.exists() {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::AlreadyExists,
+                "Task list is already locked by another process",
+            ));
+        }
+        File::create(lock_file_path)?;
+        Ok(())
+    }
+
+    /// Deletes the lock file if it exists.
+    ///
+    /// # Errors
+    /// Will return `Err` if we can't remove the lock file.
+    pub fn clear_lock_file() -> std::io::Result<()> {
+        let lock_file_path = Self::config_dir_pathbuf().join("task.lock");
+        if lock_file_path.exists() {
+            std::fs::remove_file(lock_file_path)?;
+        }
+        Ok(())
+    }
+
     pub fn toggle_future_filter(&mut self) {
         self.future_filter = !self.future_filter;
     }

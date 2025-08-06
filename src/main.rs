@@ -24,7 +24,10 @@ fn shutdown_ratatui() -> Result<()> {
 fn main() -> Result<()> {
     let mut terminal = setup_ratatui()?;
     let mut mainview = MainView::new();
-    mainview.run(&mut terminal);
+    let result = mainview.run(&mut terminal);
     shutdown_ratatui()?;
+    if !result {
+        eprintln!("Error: Failed to acquire lock file. Another instance may be running.");
+    }
     Ok(())
 }
