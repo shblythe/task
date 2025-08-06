@@ -113,6 +113,18 @@ impl TaskListView {
         self.select(task_list, task_list.filtered_tasks().count()-1);
     }
 
+    /// Returns true if the currently selected task is at the end of the list.
+    /// Also returns true if there is no currently selected task.
+    #[must_use]
+    pub fn is_at_end(&mut self, task_list: &TaskList) -> bool {
+        if let Some(selected_index) = self.selected_index(task_list) {
+            selected_index == task_list.filtered_tasks().count() - 1
+        } else {
+            // No task selected, so we are at the end
+            true
+        }
+    }
+
     /// Toggles the 'dot' on the currently selected task, and attempt to
     /// write the updated task list to storage.
     /// Silently ignores failures caused by the lack of a valid current task.

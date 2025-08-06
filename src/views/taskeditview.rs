@@ -2,7 +2,7 @@ use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{layout::Rect, style::Style, text::{Line, Span, Text}, Frame};
 use uuid::Uuid;
 
-use crate::{Task, TaskList};
+use crate::{Task, TaskList, TaskListView};
 
 #[derive(Default)]
 pub enum InputMode {
@@ -82,14 +82,19 @@ impl TaskEditView {
         self.index = 0;
     }
 
-    fn save_task(&mut self, task_list: &mut TaskList) -> std::io::Result<()> {
+    fn save_task(&mut self, task_list: &mut TaskList, task_list_view: &mut TaskListView) -> std::io::Result<()> {
         let result = if let Some(task_uuid) = self.task_uuid {
             let task = task_list.get(task_uuid).expect("Couldn't retrieve uuid'd task in TaskEditView::save_task\n{task_uuid}");
             let mut task = task.clone();
             task.update_description(&self.input);
             task_list.replace(task_uuid, task)
         } else {
-            task_list.add(Task::new(&self.input))
+            let at_end = task_list_view.is_at_end(task_list);
+            let add_result = task_list.add(Task::new(&self.input));
+            if at_end {
+                task_list_view.move_end(task_list);
+            }
+            add_result
         };
         self.input.clear();
         self.reset_cursor();
@@ -124,7 +129,12 @@ impl TaskEditView {
     /// # Errors
     ///
     /// Returns `Err` if we attempted to add a task, but the write to storage fails
-    pub fn handle_key(&mut self, key: KeyEvent, task_list: &mut TaskList, selected_uuid: Option<Uuid>) -> std::io::Result<bool> {
+    pub fn handle_key(
+            &mut self,
+            key: KeyEvent,
+            task_list: &mut TaskList,
+            task_list_view: &mut TaskListView)
+                -> std::io::Result<bool> {
         match self.mode {
             InputMode::Normal => {
                 if key.modifiers.is_empty() {
@@ -135,7 +145,7 @@ impl TaskEditView {
                             Ok(true)
                         },
                         KeyCode::Char('m') => {
-                            if let Some(task_uuid) = selected_uuid {
+                            if let Some(task_uuid) = task_list_view.selected_uuid() {
                                 self.mode = InputMode::Editing;
                                 self.task_uuid = Some(task_uuid);
                                 if let Some(task) = task_list.get(task_uuid) {
@@ -155,7 +165,7 @@ impl TaskEditView {
             },
             InputMode::Editing => {
                 match key.code {
-                    KeyCode::Enter => self.save_task(task_list)?,
+                    KeyCode::Enter => self.save_task(task_list, task_list_view)?,
                     KeyCode::Char(to_insert) => self.enter_char(to_insert),
                     KeyCode::Backspace => self.backspace_delete(),
                     KeyCode::Left => self.cursor_left(),
