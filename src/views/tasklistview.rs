@@ -67,12 +67,23 @@ impl TaskListView {
     /// the visible list.
     pub fn fix_selection(&mut self, task_list: &TaskList) {
         let last_index = task_list.filtered_tasks().count() - 1;
+        // If we have a selected task, try to re-select it
+        if let Some(uuid) = self.selected_uuid {
+            if let Some(index) = task_list.filtered_tasks().position(|t| t.uuid() == uuid) {
+                self.select(task_list, index);
+                return;
+            }
+        }
         let index = usize::min(self.state.selected().unwrap_or(last_index), last_index);
         // If every item will fit in the view, reset the view to show every item
         if let Some(area) = self.last_rendered_area {
             if last_index < area.height.into() {
                 *self.state.offset_mut() = 0;
             }
+        }
+        // Also reset the view if we are at the end of the list
+        if self.is_at_end(task_list) {
+            *self.state.offset_mut() = 0;
         }
         self.select(task_list, index);
     }
