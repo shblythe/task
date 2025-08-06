@@ -14,7 +14,7 @@ pub struct TaskList {
     tasks: Vec<Task>,
     show_completed: bool,
     future_filter: bool,
-    show_dotted_only: bool
+    show_dotted_only: bool  // We actually also show all tasks below the last dotted
 }
 
 impl Default for TaskList {
@@ -77,11 +77,26 @@ impl TaskList {
     #[must_use]
     pub fn filtered_tasks(&self) -> Box<dyn DoubleEndedIterator<Item = &Task> + '_> {
         if !self.show_completed {
-            return Box::new(self.tasks.iter().filter(move |t|
+            return Box::new(
+                self.tasks.iter().filter(move |t|
                     !t.is_complete()
                     && (!self.future_filter || !t.not_current())
                     && (!self.show_dotted_only || t.dot())
-                    ));
+                ).chain(
+                    if self.show_dotted_only {
+                        self.tasks.iter()
+                            .filter(move |t| !t.is_complete()
+                                && (!self.future_filter || !t.not_current())
+                            )
+                        .rev()
+                        .take_while(move |t| !t.dot())
+                        .collect::<Vec<_>>().into_iter()
+                        .rev()
+                    } else {
+                        std::iter::empty().collect::<Vec<_>>().into_iter().rev()
+                    }
+                )
+            );
         }
         Box::new(self.tasks.iter())
     }
