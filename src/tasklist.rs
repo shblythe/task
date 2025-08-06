@@ -138,6 +138,21 @@ impl TaskList {
         }
     }
 
+    /// Attempts to remove a task from the list, and write to storage.
+    /// Fails silently if the task to remove isn't found!
+    ///
+    /// # Errors
+    ///
+    /// Will return `Err` if the write to storage fails
+    pub fn remove(&mut self, uuid: Uuid) -> std::io::Result<()> {
+        if let Some(index) = self.tasks.iter().position(|t| t.uuid() == uuid) {
+            self.tasks.remove(index);
+            self.save()
+        } else {
+            Ok(())
+        }
+    }
+
     /// Attempts to replace a task in the list, but repositioned to the bottom
     /// and write to storage.
     /// Fails silently if the task to replace isn't found!
@@ -236,7 +251,7 @@ impl TaskList {
     }
 
     pub fn toggle_dotted_only(&mut self) {
-        self.show_dotted_only = !self.show_dotted_only
+        self.show_dotted_only = !self.show_dotted_only;
     }
 
 }

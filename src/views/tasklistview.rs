@@ -160,6 +160,20 @@ impl TaskListView {
         Ok(())
     }
 
+    /// Delete selected task, and attempt to write the updated task list to storage.
+    /// Silently ignores failures caused by the lack of a valid current task.
+    ///
+    /// # Errors
+    ///
+    /// Will return `Err` if the write to storage fails.
+    pub fn delete(&mut self, task_list: &mut TaskList) -> std::io::Result<()> {
+        if let Some(selected_uuid) = self.selected_uuid {
+            task_list.remove(selected_uuid)?;
+            self.fix_selection(task_list);
+        }
+        Ok(())
+    }
+
     /// Sets the currently selected task to completed, and attempts to
     /// write the updated task list to storage.
     /// Silently ignores failures caused by the lack of a valid current task.
@@ -264,6 +278,7 @@ impl TaskListView {
                 KeyCode::Char('.') => self.toggle_dot(tasks)?,
                 KeyCode::Char('d') => self.complete(tasks)?,
                 KeyCode::Char('r') => self.recur_daily(tasks)?,
+                KeyCode::Char('x') => self.delete(tasks)?,
                 KeyCode::Char('z') => self.snooze_tomorrow(tasks)?,
                 KeyCode::Char('Z') => self.snooze_1s(tasks)?,
                 _ => return Ok(false)
@@ -294,7 +309,9 @@ impl TaskListView {
  a - add task
  . - Toggle dot
  d - Mark as done
+ m - modify task
  r - Toggle daily recurring
+ x - Delete task
  z - Snooze until tomorrow
  Z - Snooze for 1s (test)
 
