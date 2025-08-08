@@ -193,13 +193,32 @@ impl Task {
         self.dot = false;
     }
 
-    pub fn complete(&mut self) {
-        self.dot = false;
-        if self.recur_interval_days.is_some() {
-            self.recur_next();
+    pub fn clone_next_occurrence(&self) -> Option<Self> {
+        if self.is_recurring() {
+            let mut next = Self {
+                description: self.description.clone(),
+                dot: false,
+                uuid: Uuid::new_v4(), // New UUID for the next occurrence
+                completed: None,
+                recur_next: self.recur_next,
+                recur_interval_days: self.recur_interval_days,
+                snooze_until: None, // Reset snooze for the next occurrence
+            };
+            next.recur_next(); // Next occurrence
+            Some(next)
         } else {
-            self.completed = Some(Local::now().naive_local());
+            None
         }
+    }
+
+    /// Completes the task, setting the `completed` field to the current time.
+    /// Returns `Some(Self)` if there is a new task to add for the next occurrence,
+    /// or `None` if the task is not recurring and has been completed.
+    #[must_use]
+    pub fn complete(&mut self) -> Option<Self> {
+        self.dot = false;
+        self.completed = Some(Local::now().naive_local());
+        self.clone_next_occurrence()
     }
 
     #[must_use]

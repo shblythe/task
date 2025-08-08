@@ -185,7 +185,11 @@ impl TaskListView {
         if let Some(selected_uuid) = self.selected_uuid {
             if let Some(task) = task_list.get(selected_uuid) {
                 let mut task = task.clone();
-                task.complete();
+                let next = task.complete();
+                if let Some(next) = next {
+                    // If the task is recurring, we add the next occurrence to the list
+                    task_list.add(next)?;
+                }
                 task_list.replace(selected_uuid, task)?;
                 self.fix_selection(task_list);
             }
