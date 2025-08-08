@@ -12,5 +12,8 @@ pub use mainview::*;
 
 pub mod taskdetailview;
 
+pub mod tasknextview;
+pub use tasknextview::*;
+
 pub mod popup;
 

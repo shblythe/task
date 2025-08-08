@@ -75,6 +75,11 @@ impl TaskList {
     }
 
     #[must_use]
+    pub fn last_dotted_task(&self) -> Option<&Task> {
+        self.tasks.iter().rev().find(|t| t.dot())
+    }
+
+    #[must_use]
     pub fn filtered_tasks(&self) -> Box<dyn DoubleEndedIterator<Item = &Task> + '_> {
         if !self.show_completed {
             return Box::new(

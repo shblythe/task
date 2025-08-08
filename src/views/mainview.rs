@@ -7,13 +7,14 @@ use ratatui::{backend::CrosstermBackend,
     widgets::{Block, Borders },
     Frame, Terminal};
 
-use crate::{taskdetailview, TaskEditView, TaskList, TaskListView, TaskDoneView};
+use crate::{taskdetailview, TaskEditView, TaskList, TaskListView, TaskDoneView, TaskNextView};
 
 pub struct MainView {
     tasks: TaskList,
     load_failed: bool,
     task_list_view: TaskListView,
     task_done_view: TaskDoneView,
+    task_next_view: TaskNextView,
     task_edit_view: TaskEditView,
     write_fails: i32,
     details_pane: bool,
@@ -36,6 +37,7 @@ impl MainView {
             task_list_view: TaskListView::default(),
             task_done_view: TaskDoneView::default(),
             task_edit_view: TaskEditView::default(),
+            task_next_view: TaskNextView::default(),
             write_fails: i32::default(),
             details_pane: bool::default(),
             help_pane: bool::default(),
@@ -86,16 +88,18 @@ impl MainView {
         let task_list_panes = Layout::new(
             Direction::Vertical,
             [
-                Constraint::Length(1),
-                Constraint::Length(10),
-                Constraint::Length(1),
-                Constraint::Min(0)
+                Constraint::Length(1),  // 0 - Done today - header
+                Constraint::Length(10), // 1 - Done today - tasks
+                Constraint::Length(1),  // 2 - Next task
+                Constraint::Length(1),  // 3 - Todo - header
+                Constraint::Min(0)      // 4 - Todo - tasks
             ]
         ).split(panes[0]);
         frame.render_widget(Block::new().borders(Borders::TOP).title("Done today ".green()), task_list_panes[0]);
         self.task_done_view.render(frame, task_list_panes[1], &self.tasks);
-        frame.render_widget(Block::new().borders(Borders::TOP).title("Todo "), task_list_panes[2]);
-        self.task_list_view.render(frame, task_list_panes[3], &self.tasks);
+        self.task_next_view.render(frame, task_list_panes[2], &self.tasks);
+        frame.render_widget(Block::new().borders(Borders::TOP).title("Todo "), task_list_panes[3]);
+        self.task_list_view.render(frame, task_list_panes[4], &self.tasks);
         taskdetailview::render(frame, panes[1], self.task_list_view.selected_uuid(), &self.tasks);
         self.render_help(frame, panes[2]);
     }
