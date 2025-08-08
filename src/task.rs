@@ -108,6 +108,19 @@ impl Task {
         self.recur_interval_days = None;
     }
 
+    #[must_use]
+    pub fn remove(&mut self) -> bool {
+        // If the task is recurring, we just update it to the next occurrence
+        // and return true, so that the caller doesn't remove it from the list.
+        if self.is_recurring() {
+            self.recur_next();
+            return true;
+        }
+        // If it's not recurring, we return false, so that the caller can remove it
+        // from the list.
+        false
+    }
+
     pub fn snooze_tomorrow(&mut self) {
         self.snooze_until = Some(Task::in_n_days_5am(1));
     }

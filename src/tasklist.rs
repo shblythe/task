@@ -140,13 +140,19 @@ impl TaskList {
 
     /// Attempts to remove a task from the list, and write to storage.
     /// Fails silently if the task to remove isn't found!
+    /// Before removing, gives the task a chance to remove itself (because it
+    /// might be recurring, in which case it will just update itself to the next
+    /// occurrence).
     ///
     /// # Errors
     ///
     /// Will return `Err` if the write to storage fails
     pub fn remove(&mut self, uuid: Uuid) -> std::io::Result<()> {
         if let Some(index) = self.tasks.iter().position(|t| t.uuid() == uuid) {
-            self.tasks.remove(index);
+            if !self.tasks[index].remove() {
+                // If the task didn't remove itself, we remove it from the list
+                self.tasks.remove(index);
+            }
             self.save()
         } else {
             Ok(())
