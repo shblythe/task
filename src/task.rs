@@ -193,7 +193,8 @@ impl Task {
         self.dot = false;
     }
 
-    pub fn clone_next_occurrence(&self) -> Option<Self> {
+    #[must_use]
+    fn clone_next_occurrence(&self) -> Option<Self> {
         if self.is_recurring() {
             let mut next = Self {
                 description: self.description.clone(),
