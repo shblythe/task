@@ -9,6 +9,12 @@ pub struct Task {
     description: String,
     dot: bool,
     uuid: Uuid,
+
+    // The time the task was created, in local time.
+    // Use default for tasks that don't have this field.
+    #[serde(default)]
+    created: NaiveDateTime,
+
     // Contains an Instant if the task is complete
     completed: Option<NaiveDateTime>,
     // Contains an Instant which is the next recurrence, if it's a
@@ -26,6 +32,7 @@ impl Task {
             description: description.to_string(),
             dot: false,
             uuid: Uuid::new_v4(),
+            created: Local::now().naive_local(),
             completed: None,
             recur_next: None,
             recur_interval_days: None,
@@ -41,6 +48,9 @@ impl Task {
         output.push('\n');
         output.push_str("uuid: ");
         output.push_str(&self.uuid.to_string());
+        output.push('\n');
+        output.push_str("created: ");
+        output.push_str(self.created.to_string().split('.').next().unwrap_or("Invalid date"));
         output.push('\n');
         output.push_str("completed: ");
         if let Some(completed) = self.completed {
@@ -200,6 +210,7 @@ impl Task {
                 description: self.description.clone(),
                 dot: false,
                 uuid: Uuid::new_v4(), // New UUID for the next occurrence
+                created: Local::now().naive_local(),
                 completed: None,
                 recur_next: self.recur_next,
                 recur_interval_days: self.recur_interval_days,
