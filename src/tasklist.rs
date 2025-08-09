@@ -76,7 +76,7 @@ impl TaskList {
 
     #[must_use]
     pub fn last_dotted_task(&self) -> Option<&Task> {
-        self.tasks.iter().rev().find(|t| t.dot())
+        self.tasks.iter().rev().find(|t| t.dot() && !t.is_complete() && !t.not_current())
     }
 
     #[must_use]
