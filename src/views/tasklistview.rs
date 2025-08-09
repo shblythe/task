@@ -168,6 +168,7 @@ impl TaskListView {
     /// Will return `Err` if the write to storage fails.
     pub fn delete(&mut self, task_list: &mut TaskList) -> std::io::Result<()> {
         if let Some(selected_uuid) = self.selected_uuid {
+            self.move_down(task_list);
             task_list.remove(selected_uuid)?;
             self.fix_selection(task_list);
         }
@@ -185,11 +186,13 @@ impl TaskListView {
         if let Some(selected_uuid) = self.selected_uuid {
             if let Some(task) = task_list.get(selected_uuid) {
                 let mut task = task.clone();
-                let next = task.complete();
-                if let Some(next) = next {
+                let next_occurrence = task.complete();
+                if let Some(next_occurrence) = next_occurrence {
                     // If the task is recurring, we add the next occurrence to the list
-                    task_list.add(next)?;
+                    task_list.add(next_occurrence)?;
                 }
+                // When we complete a task, by default we want to select the next task in the list
+                self.move_down(task_list);
                 task_list.replace(selected_uuid, task)?;
                 self.fix_selection(task_list);
             }
@@ -235,6 +238,7 @@ impl TaskListView {
             if let Some(task) = task_list.get(selected_uuid) {
                 let mut task = task.clone();
                 task.snooze_tomorrow();
+                self.move_down(task_list);
                 task_list.replace(selected_uuid, task)?;
                 self.fix_selection(task_list);
             }
@@ -254,6 +258,7 @@ impl TaskListView {
             if let Some(task) = task_list.get(selected_uuid) {
                 let mut task = task.clone();
                 task.snooze_1s();
+                self.move_down(task_list);
                 task_list.replace(selected_uuid, task)?;
                 self.fix_selection(task_list);
             }
