@@ -23,7 +23,7 @@ impl Default for TaskList {
             tasks: Vec::default(),
             show_completed: Default::default(),
             future_filter: true,
-            show_dotted_only: Default::default()
+            show_dotted_only: true
         }
     }
 }
