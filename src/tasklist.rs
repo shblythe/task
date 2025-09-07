@@ -80,6 +80,11 @@ impl TaskList {
     }
 
     #[must_use]
+    pub fn last_dotted_task_index(&self) -> Option<usize> {
+        self.filtered_tasks().collect::<Vec<_>>().into_iter().rposition(Task::dot)
+    }
+
+    #[must_use]
     pub fn filtered_tasks(&self) -> Box<dyn DoubleEndedIterator<Item = &Task> + '_> {
         if !self.show_completed {
             return Box::new(

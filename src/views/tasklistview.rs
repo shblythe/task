@@ -102,6 +102,12 @@ impl TaskListView {
         self.move_up_n(task_list, 1);
     }
 
+    pub fn focus_next_task(&mut self, task_list: &TaskList) {
+        if let Some(next_index) = task_list.last_dotted_task_index() {
+            self.select(task_list, next_index);
+        }
+    }
+
     pub fn move_down_n(&mut self, task_list: &TaskList, n: usize) {
         if let Some(current) = self.state.selected() {
             if current+n < task_list.filtered_tasks().count()-1 {
@@ -284,6 +290,7 @@ impl TaskListView {
                 KeyCode::Char('G') => self.move_end(tasks),
                 KeyCode::Char('j') => self.move_down(tasks),
                 KeyCode::Char('k') => self.move_up(tasks),
+                KeyCode::Char('n') => self.focus_next_task(tasks),
                 KeyCode::Char('.') => self.toggle_dot(tasks)?,
                 KeyCode::Char('d') => self.complete(tasks)?,
                 KeyCode::Char('r') => self.recur_daily(tasks)?,
@@ -314,6 +321,7 @@ impl TaskListView {
  k - Move up
  j - Move down
  G - Move to end
+ n - Focus on next task
 
  a - add task
  . - Toggle dot
