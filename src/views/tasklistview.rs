@@ -154,13 +154,17 @@ impl TaskListView {
             if let Some(task) = task_list.get(selected_uuid) {
                 let mut task = task.clone();
                 task.toggle_dot();
-                if task.dot() {
-                    task_list.replace(selected_uuid, task)?;
-                } else {
-                    // undotted task, so move to bottom
-                    task_list.replace_at_bottom(selected_uuid, task)?;
-                }
+                let dot = task.dot();
+                task_list.replace(selected_uuid, task.clone())?;
                 self.fix_selection(task_list);
+                if !dot {
+                    // undotted task, so move down the list
+                    // so we focus on the next task to process, and move
+                    // the undotted task to the bottom.
+                    self.move_down(task_list);
+                    task_list.replace_at_bottom(selected_uuid, task)?;
+                    self.fix_selection(task_list);
+                }
             }
         }
         Ok(())
